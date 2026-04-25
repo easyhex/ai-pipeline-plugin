@@ -50,9 +50,14 @@ The pipeline depends on 4 Claude Code plugins. Detect which are missing and inst
 
 3. **If MISSING is non-empty:**
 
-   Print one-line preview:
+   Print multi-line preview:
    ```
-   About to install missing prerequisite plugins: <comma-separated names>. Proceed? [y/n]
+   About to install missing prerequisites:
+     - <missing plugin 1>
+     - <missing plugin 2>
+     - ...
+     - serena-agent (Python tool via uv) + MCP registration   [if uv present and Serena missing]
+   Proceed? [y/n]
    ```
 
    Wait for user input (one character).
@@ -70,6 +75,46 @@ The pipeline depends on 4 Claude Code plugins. Detect which are missing and inst
    ```
    beads CLI not found. Install it manually: brew install beads
    Continuing without bd init — task tracking will not work until bd is installed.
+   ```
+
+5. **Detect `uv` and Serena (separate from plugins):**
+
+   ```bash
+   command -v uv >/dev/null 2>&1 && echo UV_PRESENT || echo UV_MISSING
+   ```
+
+   If `UV_PRESENT`:
+   - Detect Serena CLI install: `uv tool list 2>/dev/null | grep -q "^serena-agent" && echo SERENA_INSTALLED || echo SERENA_NOT_INSTALLED`
+   - Detect Serena MCP registration: `claude mcp list 2>/dev/null | grep -q "^serena:" && echo SERENA_MCP_REGISTERED || echo SERENA_MCP_NOT_REGISTERED`
+   - If either is missing, add this line to the consent prompt list (alongside the missing plugins):
+     ```
+     - serena-agent (Python tool via uv) + MCP registration
+     ```
+   - On consent (`y`):
+     ```bash
+     # Install if not installed
+     if ! uv tool list 2>/dev/null | grep -q "^serena-agent"; then
+       uv tool install -p 3.13 serena-agent@latest --prerelease=allow 2>&1 | tail -3
+     fi
+
+     # Initialize global Serena config (idempotent)
+     serena init </dev/null 2>&1 | head -10
+
+     # Register MCP server at user scope (idempotent — skip if already registered)
+     if ! claude mcp list 2>/dev/null | grep -q "^serena:"; then
+       claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd 2>&1 | tail -3
+     fi
+     ```
+   - On any failure: print warning with the exact failed command, continue.
+
+   If `UV_MISSING`, print:
+   ```
+   uv not installed. Install: brew install uv  (or  curl -LsSf https://astral.sh/uv/install.sh | sh)
+   Then re-enable Serena in this project:
+     uv tool install -p 3.13 serena-agent@latest --prerelease=allow
+     serena init
+     claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd
+   Continuing without Serena — /remember and memory-aware ground phases will be disabled.
    ```
 
 ---
