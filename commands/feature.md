@@ -39,12 +39,19 @@ mcp__plugin_context7-plugin_context7__resolve-library-id { libraryName: "<lib>" 
 mcp__plugin_context7-plugin_context7__query-docs { id: "<resolved>", topic: "<topic relevant to feature>" }
 ```
 
+**Memory grounding (NEW):**
+
+Call `mcp__serena__list_memories` to retrieve all memory names. For each name whose slug substring-matches the feature description (`$ARGUMENTS`) OR matches files plausibly affected by this work, call `mcp__serena__read_memory({ name: <name> })` and incorporate its content into your context.
+
+Add a `Memory grounding: N memories loaded (<comma-separated names>)` line to the internal ground summary. If `list_memories` fails (Serena MCP not running), skip this step silently with one note: `Memory grounding: skipped (Serena unavailable)`.
+
 Produce a 5-10 bullet **ground summary** (internal — not shown to user unless asked):
 - Architecture context (where this feature fits)
 - Existing features it interacts with
 - Roadmap position
 - Lessons that match this feature's domain (cite filenames)
 - Library-specific gotchas from Context7
+- Memory grounding results (N memories loaded, or skipped)
 - Open questions for brainstorm
 
 ---
@@ -169,6 +176,24 @@ Gate: 2
 ```
 
 Critic saves report, returns one-line summary.
+
+**Auto-write suggested memories (NEW):**
+
+Read the critic's saved report file (path returned in the summary line). Parse the section beginning with `## Memories to capture (suggested)`. For each bullet entry of the form `` - `<slug>`: <summary> — <reason> ``:
+
+```bash
+# For each suggested memory:
+mcp__serena__write_memory({
+  name: "<slug>",
+  content: "<summary>\n\nCaptured by senior-critic at gate-2 of /feature \"$ARGUMENTS\" on YYYY-MM-DD.\n\n<reason>"
+})
+```
+
+If a memory with that slug already exists (check via `mcp__serena__list_memories`), append `## Update YYYY-MM-DD` section to it instead of overwriting.
+
+If `mcp__serena__write_memory` fails (Serena MCP not running), warn once with the slug and continue — do NOT block the pipeline.
+
+Print a one-line summary: `Memories captured: <N> new, <M> updated, <P> skipped`.
 
 **Decision:**
 - If Critical > 0: present to user, ask `continue / address / override`. Default `address`.
