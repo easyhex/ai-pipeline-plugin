@@ -25,6 +25,7 @@
     "superpowers@claude-plugins-official": true,
     "beads@beads-marketplace": true,
     "template-bridge@template-bridge-marketplace": true,
-    "context7-plugin@context7-marketplace": true
+    "context7-plugin@context7-marketplace": true,
+    "ai-pipeline@ai-pipeline-marketplace": true
   }
 }
