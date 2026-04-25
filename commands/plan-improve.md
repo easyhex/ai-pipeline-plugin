@@ -52,6 +52,14 @@ Invoke the senior-critic agent with:
 
 The critic returns its summary line. Save the report.
 
+**Auto-write suggested memories (NEW):**
+
+Same protocol as `/feature.md` Phase 8: parse the critic report's `## Memories to capture (suggested)` section. For each `` - `<slug>`: <summary> — <reason> `` line, call `mcp__serena__write_memory` (new) or append `## Update YYYY-MM-DD` (existing). Source line in the memory: `Captured by senior-critic at gate-1 of /plan-improve "$ARGUMENTS" on YYYY-MM-DD`.
+
+If Serena MCP unavailable: warn, skip, continue.
+
+Print: `Memories captured: <N> new, <M> updated, <P> skipped`.
+
 If Critical findings exist, present them to the user and offer:
 - `continue` — apply the change anyway (note in commit message)
 - `address` — re-draft based on critic findings
