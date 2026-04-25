@@ -1,6 +1,6 @@
 # ai-pipeline
 
-Плагин для Claude Code — пайплайн AI-разработки из 6 команд с автоматическим критиком (senior engineer) на двух стадиях и системой накопления уроков.
+Плагин для Claude Code — пайплайн AI-разработки из 7 команд с автоматическим критиком (senior engineer) на двух стадиях, системой накопления уроков и памятью Serena как 5-м слоем контекста.
 
 ## Что вы получаете
 
@@ -14,8 +14,9 @@
 | `/improve "<изменение>"` | Изменение существующего поведения — полный пайплайн |
 | `/fix "<баг>"` | Отладка + автозапись урока |
 | `/lesson` | Записать урок вручную (редко) |
+| `/remember "<факт>"` | Записать факт о проекте в память Serena (редко) |
 
-Вы никогда не вводите `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify` или `/finish` — это внутренние фазы шести команд выше.
+Вы никогда не вводите `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify` или `/finish` — это внутренние фазы семи команд выше.
 
 ## Установка
 
@@ -24,7 +25,7 @@ claude plugin marketplace add easyhex/ai-pipeline-plugin
 claude plugin install ai-pipeline@ai-pipeline-marketplace
 ```
 
-Всё. 6 команд и агент `senior-critic` теперь доступны глобально в любом проекте.
+Всё. 7 команд и агент `senior-critic` теперь доступны глобально в любом проекте.
 
 ## Создание нового проекта
 
@@ -60,15 +61,23 @@ claude
 - **context7-plugin** — актуальная документация библиотек через MCP
 - **template-bridge** — 413+ специализированных агентов
 
-Плюс один CLI-инструмент, который надо ставить вручную:
+Плюс одни CLI-инструменты, которые надо ставить вручную:
 
 - **`bd`** (Beads CLI): `brew install beads` (macOS) или `curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash`
+- **`uv`** (менеджер Python-инструментов): `brew install uv` (macOS) или `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **`serena-agent`** (Python-инструмент, автоматически установится `/init` через `uv` если `uv` присутствует)
+
+После `/init`, Serena MCP-сервер регистрируется глобально:
+
+```bash
+claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd
+```
 
 ## Архитектура
 
 Пайплайн состоит из трёх слоёв:
 
-1. **6 пользовательских команд** (в `commands/`) — загружаются Claude Code автоматически
+1. **7 пользовательских команд** (в `commands/`) — загружаются Claude Code автоматически
 2. **Агент `senior-critic`** (в `agents/`) — загружается автоматически, вызывается на двух стадиях каждой фичи
 3. **Шаблоны проекта** (в `assets/templates/`) — записываются в проект командой `/init`
 
@@ -83,6 +92,7 @@ claude
 - `.claude/settings.json` — хуки + включённые плагины (включая `ai-pipeline`)
 - `.gitignore` — стандартные исключения
 - `.claude/lessons/` — наполняется со временем командами `/fix` и `/lesson`
+- `.serena/memories/` — слой памяти Serena (стабильные знания о проекте: конвенции + решения)
 
 Полное описание дизайна — см. `docs/DESIGN_NOTES.md` и `docs/WORKFLOW_GUIDE_RU.md`.
 
@@ -104,6 +114,7 @@ claude plugin install ai-pipeline@ai-pipeline-marketplace
 4. Context7-запрос перед использованием любой библиотеки/фреймворка
 5. Критик на gate-1 (после спеки) и gate-2 (после диффа)
 6. Каждый зелёный TDD-цикл заканчивается `git commit`; каждый `/fix` пишет урок
+7. Перед запуском `/feature` или `/improve`: прочитать `.serena/memories/` и загрузить любую память, соответствующую теме работы или затронутым файлам
 
 ## Контрибуция
 
