@@ -83,7 +83,7 @@ claude mcp add --scope user serena -- serena start-mcp-server --context claude-c
 
 Файлы проекта, которые пишет `/init`:
 
-- `CLAUDE.md` — правила пайплайна и набор из 6 команд
+- `CLAUDE.md` — правила пайплайна и набор из 7 команд
 - `docs/architecture.md` — мастер-план: целевая архитектура (≤300 строк)
 - `docs/features.md` — мастер-план: список фич (≤500 строк)
 - `docs/roadmap.md` — мастер-план: упорядоченные приоритеты (≤200 строк)
