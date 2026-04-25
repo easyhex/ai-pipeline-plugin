@@ -20,7 +20,7 @@ You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/fini
 ## Install
 
 ```bash
-claude plugin marketplace add github:easyhex/ai-pipeline-plugin
+claude plugin marketplace add easyhex/ai-pipeline-plugin
 claude plugin install ai-pipeline@ai-pipeline-marketplace
 ```
 

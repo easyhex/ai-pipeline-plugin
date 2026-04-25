@@ -20,7 +20,7 @@
 ## Установка
 
 ```bash
-claude plugin marketplace add github:easyhex/ai-pipeline-plugin
+claude plugin marketplace add easyhex/ai-pipeline-plugin
 claude plugin install ai-pipeline@ai-pipeline-marketplace
 ```
 
