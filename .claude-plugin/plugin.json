@@ -1,0 +1,12 @@
+{
+  "name": "ai-pipeline",
+  "description": "6-command AI development pipeline (/init, /plan-improve, /feature, /improve, /fix, /lesson) with auto-critic at two gates and a lessons-learned flywheel. Builds on Superpowers, Beads, Context7.",
+  "version": "0.1.0",
+  "author": {
+    "name": "easyhex",
+    "url": "https://github.com/easyhex"
+  },
+  "repository": "https://github.com/easyhex/ai-pipeline-plugin",
+  "license": "MIT",
+  "keywords": ["pipeline", "tdd", "critic", "lessons", "superpowers", "beads", "claude-code"]
+}
