@@ -7,7 +7,7 @@
       "name": "ai-pipeline",
       "source": "./",
       "description": "6-command AI development pipeline with auto-critic and lessons.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }
