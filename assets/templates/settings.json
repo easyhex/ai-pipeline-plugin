@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bd prime 2>/dev/null || true" },
+          { "type": "command", "command": "echo \"Lessons: $(ls .claude/lessons/*.md 2>/dev/null | wc -l | tr -d ' ') | Pipeline: /init /plan-improve /feature /improve /fix /lesson\"" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bd prime 2>/dev/null || true" }
+        ]
+      }
+    ]
+  },
+  "pipeline": {
+    "finish_mode": "merge"
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "beads@beads-marketplace": true,
+    "template-bridge@template-bridge-marketplace": true,
+    "context7-plugin@context7-marketplace": true
+  }
+}
