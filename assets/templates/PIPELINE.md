@@ -22,20 +22,23 @@ Same pipeline shape, but uses systematic-debugging instead of brainstorming, and
 ### `/lesson`
 Manually record a lesson learned. Prompts for trigger / symptom / root_cause / prevention. Rarely needed — `/fix` writes lessons automatically.
 
+### `/remember "<fact>"`
+Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__serena__write_memory`. Used rarely — most memories come automatically from senior-critic at gate-2.
+
 ---
 
 ## Internal phases (run automatically inside `/feature`, `/improve`, `/fix`)
 
 | # | Phase | What it does | Implemented by |
 |---|---|---|---|
-| 1 | ground | Reads `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. | inline in command file |
+| 1 | ground | Reads `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
 | 2 | brainstorm | Generates spec → saves to `docs/superpowers/specs/YYYY-MM-DD-<slug>.md` | `superpowers:brainstorming` |
 | 3 | critic-1 | Senior-critic reviews the spec | `.claude/agents/senior-critic.md` |
 | 4 | plan | Decomposes into 2-5 min tasks | `superpowers:writing-plans` |
 | 5 | bd-tasks | Creates beads tasks + dependencies | `bd create`, `bd dep add` |
 | 6 | worktree (conditional) | Isolates work in a worktree if >3 sub-tasks | `superpowers:using-git-worktrees` |
 | 7 | TDD loop | RED → verify-fail → GREEN → verify-pass → REFACTOR → `git commit` per task | `superpowers:test-driven-development` |
-| 8 | critic-2 | Senior-critic reviews the cumulative diff | `.claude/agents/senior-critic.md` |
+| 8 | critic-2 | Senior-critic reviews the cumulative diff. + auto-write suggested memories. | `.claude/agents/senior-critic.md` |
 | 9 | verify | Runs proving commands, reads exit codes | `superpowers:verification-before-completion` |
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |
 | 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped" | inline in command file |
@@ -80,6 +83,27 @@ docs/superpowers/critic-reports/YYYY-MM-DD-<slug>-gate{1,2}.md
 - Loading: every internal phase reads them; critic cites them
 - Creation: `/fix` writes one automatically; `/lesson` writes one manually
 - Pruning: manual only; never auto-delete
+
+---
+
+## Context layers
+
+The pipeline reads from 5 context layers:
+
+| Layer | Storage | Stores | Read in | Written in |
+|---|---|---|---|---|
+| **Beads** | `.beads/` | tasks + dependencies | every `bd ready` | every command |
+| **Lessons** | `.claude/lessons/*.md` | bug prevention rules | every phase (lesson trigger match) | `/fix`, `/lesson` |
+| **Master Plan** | `docs/{architecture,features,roadmap}.md` | what+how+priorities | ground phase | `/init`, `/plan-improve`, `/feature` (features.md only) |
+| **Context7** | live MCP query | external library docs | ground phase | n/a (read-only) |
+| **Serena memory** | `.serena/memories/*.md` | project conventions + design decisions | `/feature`/`/improve` ground | senior-critic at gate-2 (gate-1 for `/plan-improve`), `/remember` |
+
+The layers do NOT overlap by design:
+- Bug? → lesson
+- Task? → bead
+- Architectural decision? → master plan (`architecture.md`)
+- External library quirk? → Context7 (or Serena memory if it's PROJECT-specific use of that library)
+- Project convention or ambient knowledge? → Serena memory
 
 ---
 
