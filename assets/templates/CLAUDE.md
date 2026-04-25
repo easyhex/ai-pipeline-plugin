@@ -13,6 +13,7 @@ Source of truth: `docs-meta/PIPELINE.md`.
 | `/improve "<change to X>"` | Modify existing behavior — full automatic pipeline |
 | `/fix "<bug>"` | Debug + auto-record lesson |
 | `/lesson` | Manually record a lesson (rare) |
+| `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
 
 **Never expose internal phases** (`/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, `/finish`) to the user as commands. They run automatically inside `/feature`, `/improve`, `/fix`.
 
@@ -24,6 +25,7 @@ Source of truth: `docs-meta/PIPELINE.md`.
 4. **Before using ANY library, framework, SDK, or CLI tool:** query Context7. Run `mcp__plugin_context7-plugin_context7__resolve-library-id` then `mcp__plugin_context7-plugin_context7__query-docs`. Do not write library code from memory.
 5. **Critic runs automatically** at gate-1 (post-spec) and gate-2 (post-diff). Critical findings block continuation unless the user explicitly overrides with a written reason saved to the report.
 6. **Every TDD GREEN cycle ends with a `git commit`.** Every `/fix` ends with a lesson written to `.claude/lessons/`.
+7. **Before starting `/feature` or `/improve`:** list `.serena/memories/` and read any memory whose name matches the work's topic or affected files. Cite the memory name when applying its content.
 
 ## Master Plan files
 
@@ -41,6 +43,30 @@ Update `features.md` automatically when a feature ships (final phase of `/featur
 - Schema: `docs-meta/LESSON_FORMAT.md`
 - Critic agent reads them at every gate and explicitly cites which apply
 - Never auto-delete; user prunes manually
+
+## Memories (Serena)
+
+Stored in `.serena/memories/` — one markdown file per topic. Holds **stable project knowledge** that doesn't fit:
+
+- Beads (tasks)
+- Lessons (bug prevention rules)
+- Master Plan (architecture/features/roadmap)
+- Context7 (external library docs)
+
+**Examples** of memory-worthy facts:
+- Project conventions: "we use snake_case for db cols, camelCase in TS"
+- Design decisions with rationale: "Postgres over Mongo because X"
+- Domain-specific facts: "users billed in EUR not USD"
+- Module-specific quirks: "auth middleware bypasses /healthz"
+
+**Written by:**
+- senior-critic at gate-2 of `/feature` and `/improve` (auto-suggested; pipeline writes them)
+- senior-critic at gate-1 of `/plan-improve` (same)
+- `/remember "<fact>"` (manual, anytime)
+
+**Read by:** every `/feature` and `/improve` ground phase.
+
+**NOT written by `/fix`** — bugs go to `.claude/lessons/`, not Serena memory.
 
 ## Git
 
