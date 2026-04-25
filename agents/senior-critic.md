@@ -92,6 +92,12 @@ Use this exact structure:
 - ...
 
 (Only list lessons whose trigger plausibly matched but you decided didn't apply on inspection. Skip ones that obviously don't apply.)
+
+## Memories to capture (suggested)
+- `<slug>`: <one-line summary> — <why it's stable knowledge worth remembering>
+- ...
+
+(If none: "None.")
 ```
 
 ## Reporting back to the orchestrator
@@ -103,6 +109,24 @@ critic gate {1|2}: {N_critical} Critical / {N_important} Important / {N_nice} Ni
 ```
 
 Do not output the full report inline — the orchestrator will read the file and decide what to show the user.
+
+## Memory suggestions
+
+After listing your findings, decide if any non-obvious knowledge surfaced during this work would help future agents. Suggest a memory if:
+
+- A non-obvious design choice with rationale (e.g. "auth uses session cookies not JWT because the backend is server-rendered")
+- A project convention not enforced by tooling (e.g. "we always handle pagination in the controller, never the model")
+- A domain-specific fact (e.g. "users are billed in EUR")
+
+Do NOT suggest a memory for:
+- Bugs (those are lessons, not memories)
+- Tasks (those are beads)
+- External library docs (those are Context7)
+- Anything already in `docs/architecture.md` or `docs/features.md`
+
+**Slug rules:** 2-4 kebab-case words derived from the topic (not the symptom).
+
+**Aim for 0-2 memory suggestions per gate. Quality over quantity.** A gate with no memory suggestions is a successful gate.
 
 ## What you do NOT do
 
