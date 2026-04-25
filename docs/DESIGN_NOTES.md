@@ -4,6 +4,7 @@ This plugin packages a 6-command AI development pipeline. The full design ration
 
 - **Pipeline design** — the 6 commands, the `senior-critic` agent, the lessons system, the Master Plan split: see the original spec at `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-design.md`
 - **Plugin packaging design** — turning the per-project pipeline into an installable Claude Code plugin: see `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-plugin-design.md`
+- **Serena memory integration (v0.2.0)** — see the spec at `project_template/docs/superpowers/specs/2026-04-25-serena-memory-integration.md` for the full design (5-layer context model, /remember command, critic-driven auto-capture).
 
 ## Why this design
 

@@ -19,6 +19,7 @@ This file applies to anyone (human or AI agent) editing this **plugin repo**. It
 4. **Test before publishing**: every change must be smoke-tested by running `/init` in `/tmp/test-<n>/` and confirming all per-project files are written correctly.
 5. **Two READMEs**: `README.md` (English) and `README_RU.md` (Russian) must be updated together.
 6. **No git push from inside Claude.** User pushes manually.
+7. **Serena memory is the 5th context layer.** Any change to `commands/feature.md`, `commands/improve.md`, `commands/plan-improve.md`, or `agents/senior-critic.md` must keep the memory read/write logic intact (Phase 1 ground reads memories; gates auto-write suggested memories from the critic). Do not duplicate memory writes across multiple commands.
 
 ## Smoke test workflow
 
@@ -46,6 +47,7 @@ rm -rf /tmp/ai-pipeline-smoke-*
 - 0.x → breaking changes between minor versions are OK
 - 1.x → semver enforced (breaking changes only on major)
 - Tag every release: `git tag v<version> && git push origin v<version>`
+- v0.2.0 adds Serena memory integration; new prereq is `uv` + `serena-agent` (auto-installed by `/init`)
 
 ## What this plugin does NOT do
 
