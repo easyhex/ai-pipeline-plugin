@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bd prime 2>/dev/null || true" },
+          { "type": "command", "command": "echo 'WORKFLOW: ai-pipeline plugin loaded. Run /init to bootstrap, /feature to build.'" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bd prime 2>/dev/null || true" }
+        ]
+      }
+    ]
+  }
+}
