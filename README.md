@@ -1,6 +1,6 @@
 # ai-pipeline
 
-A Claude Code plugin that ships a 6-command AI development pipeline with an automatic senior-engineer critic at two gates and a lessons-learned flywheel.
+A Claude Code plugin that ships a 7-command AI development pipeline with an automatic senior-engineer critic at two gates, a lessons-learned flywheel, and Serena memory as a 5th context layer.
 
 ## What you get
 
@@ -14,8 +14,9 @@ After installing this plugin, you can bootstrap any new project with one command
 | `/improve "<change>"` | Modify existing behavior — full automatic pipeline |
 | `/fix "<bug>"` | Debug + auto-record a lesson |
 | `/lesson` | Manually record a lesson (rare) |
+| `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
 
-You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/finish` — those are internal phases of the 6 commands above.
+You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/finish` — those are internal phases of the 7 commands above.
 
 ## Install
 
@@ -24,7 +25,7 @@ claude plugin marketplace add easyhex/ai-pipeline-plugin
 claude plugin install ai-pipeline@ai-pipeline-marketplace
 ```
 
-That's it. The 6 commands and the `senior-critic` agent are now available globally in any project.
+That's it. The 7 commands and the `senior-critic` agent are now available globally in any project.
 
 ## Bootstrap a new project
 
@@ -63,12 +64,20 @@ The plugin depends on 4 other Claude Code plugins. `/init` auto-installs any tha
 Plus one CLI tool that must be installed manually:
 
 - **`bd`** (Beads CLI): `brew install beads` (macOS) or `curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash`
+- **`uv`** (Python tool manager): `brew install uv` (macOS) or `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **`serena-agent`** (Python tool, auto-installed by `/init` via `uv` if `uv` is present)
+
+After `/init`, the Serena MCP server is registered globally:
+
+```bash
+claude mcp add --scope user serena -- serena start-mcp-server --context claude-code --project-from-cwd
+```
 
 ## Architecture
 
 The pipeline has three layers:
 
-1. **6 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
+1. **7 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
 2. **`senior-critic` subagent** (in `agents/`) — auto-loaded, invoked at two gates per feature
 3. **Per-project templates** (in `assets/templates/`) — written into your project by `/init`
 
@@ -83,6 +92,7 @@ Per-project files written by `/init`:
 - `.claude/settings.json` — hooks + enabled plugins (including `ai-pipeline`)
 - `.gitignore` — common ignores
 - `.claude/lessons/` — populated over time by `/fix` and `/lesson`
+- `.serena/memories/` — Serena memory layer (stable project knowledge: conventions + design decisions)
 
 For the full design rationale, see `docs/DESIGN_NOTES.md`.
 
@@ -104,6 +114,7 @@ After `/init`, the per-project `CLAUDE.md` enforces:
 4. Context7 query before any library/framework usage
 5. Critic at gate-1 (post-spec) and gate-2 (post-diff)
 6. Every TDD GREEN cycle ends with `git commit`; every `/fix` ends with a lesson
+7. Before starting `/feature` or `/improve`: list `.serena/memories/` and read any memory whose name matches the work's topic or affected files
 
 ## Contributing
 
