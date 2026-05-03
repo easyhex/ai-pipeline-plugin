@@ -19,7 +19,14 @@
     ]
   },
   "pipeline": {
-    "finish_mode": "merge"
+    "finish_mode": "merge",
+    "visual_verify": {
+      "mode": "required",
+      "base_url": "http://localhost:3000",
+      "dev_command": "auto",
+      "dev_port_timeout_sec": 60,
+      "fail_on_console_error": true
+    }
   },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
