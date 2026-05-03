@@ -67,6 +67,16 @@ The brainstorming skill produces a spec. Save it to:
 docs/superpowers/specs/<SLUG>.md
 ```
 
+**Frontend hint (NEW):** If the project has a frontend (`package.json` deps include `react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro` OR a root `index.html` exists), the spec MUST include a section:
+
+```markdown
+## URLs to verify
+- /
+- /<other-path-touched-by-this-feature>
+```
+
+If the brainstorm output omits this section for a frontend project, add it with at least `- /`. The visual sub-step in Phase 9 will navigate to each path.
+
 If the brainstorm has a real clarifying question (not stylistic), ask the user. Wait for answer. Otherwise proceed silently.
 
 ---
@@ -213,6 +223,196 @@ Invoke `superpowers:verification-before-completion`. Identify and run the provin
 - Build: `<build command if configured>`
 
 For each: run fresh, read full output, capture exit code. If any fail → STOP, surface output, do not proceed.
+
+### Phase 9b: Visual verification (frontend only)
+
+After the proving commands above pass, run a visual gate **only for frontend projects**.
+
+**Detect frontend:**
+
+```bash
+HAS_FRONTEND=no
+if [ -f package.json ]; then
+  jq -e '.dependencies + .devDependencies | keys[] |
+    test("^(react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro)$")' \
+    package.json >/dev/null 2>&1 && HAS_FRONTEND=yes
+fi
+[ -f index.html ] && HAS_FRONTEND=yes
+```
+
+If `HAS_FRONTEND=no` → skip directly to Phase 10.
+
+**Read settings:**
+
+```bash
+MODE=$(jq -r '.pipeline.visual_verify.mode // "required"' .claude/settings.json)
+BASE_URL=$(jq -r '.pipeline.visual_verify.base_url // "http://localhost:3000"' .claude/settings.json)
+DEV_CMD=$(jq -r '.pipeline.visual_verify.dev_command // "auto"' .claude/settings.json)
+TIMEOUT=$(jq -r '.pipeline.visual_verify.dev_port_timeout_sec // 60' .claude/settings.json)
+FAIL_CONSOLE=$(jq -r '.pipeline.visual_verify.fail_on_console_error // true' .claude/settings.json)
+```
+
+If `MODE=skip` → skip to Phase 10.
+
+**Verify Playwright MCP is registered:**
+
+```bash
+claude mcp list 2>/dev/null | grep -q "^playwright:" || {
+  echo "FAIL: Playwright MCP not registered. Run: claude mcp add --scope user playwright -- npx '@playwright/mcp@latest'"
+  [ "$MODE" = "required" ] && exit 1 || { echo "WARN: skipping visual sub-step"; SKIP_VISUAL=yes; }
+}
+```
+
+If `SKIP_VISUAL=yes` → skip to Phase 10.
+
+**Probe / start dev server (hybrid):**
+
+```bash
+DEV_PID=""
+if curl -sf -o /dev/null -m 2 "$BASE_URL"; then
+  echo "Reusing existing dev server at $BASE_URL"
+else
+  if [ "$DEV_CMD" = "auto" ]; then
+    if jq -e '.scripts.dev' package.json >/dev/null 2>&1; then
+      DEV_CMD="npm run dev"
+    elif jq -e '.scripts.start' package.json >/dev/null 2>&1; then
+      DEV_CMD="npm run start"
+    else
+      echo "FAIL: no scripts.dev / scripts.start in package.json. Set pipeline.visual_verify.dev_command."
+      [ "$MODE" = "required" ] && exit 1 || SKIP_VISUAL=yes
+    fi
+  fi
+  if [ -z "$SKIP_VISUAL" ]; then
+    bash -c "$DEV_CMD" >/tmp/ai-pipeline-dev.log 2>&1 &
+    DEV_PID=$!
+    trap "[ -n \"$DEV_PID\" ] && kill $DEV_PID 2>/dev/null" EXIT
+    UP=no
+    for i in $(seq 1 $TIMEOUT); do
+      if curl -sf -o /dev/null -m 2 "$BASE_URL"; then
+        echo "Dev server up after ${i}s"
+        UP=yes
+        break
+      fi
+      sleep 1
+    done
+    if [ "$UP" = "no" ]; then
+      kill $DEV_PID 2>/dev/null
+      echo "FAIL: dev server did not answer 200 OK in ${TIMEOUT}s. Log: /tmp/ai-pipeline-dev.log"
+      [ "$MODE" = "required" ] && exit 1 || SKIP_VISUAL=yes
+    fi
+  fi
+fi
+```
+
+If `SKIP_VISUAL=yes` → skip to Phase 10.
+
+**Extract URLs from spec:**
+
+```bash
+URLS=$(awk '/^## URLs to verify/{flag=1; next} /^## /{flag=0} flag && /^- /' \
+  docs/superpowers/specs/<SLUG>.md | sed -E 's/^- //; s|^https?://[^/]+||' | grep -E '^/' || true)
+[ -z "$URLS" ] && URLS="/"
+```
+
+**Make evidence dirs:**
+
+```bash
+EVIDENCE_DIR="docs/superpowers/visual-evidence/<SLUG>"
+mkdir -p "$EVIDENCE_DIR/screenshots" "$EVIDENCE_DIR/snapshots"
+> "$EVIDENCE_DIR/console.txt"
+```
+
+**Slugify helper (compute per URL):**
+
+For each URL `path`, compute `urlslug`:
+- `/` → `_root`
+- otherwise: lowercase, strip `?...` query, replace any non-alphanumeric with `_`, collapse repeats, trim leading/trailing `_`.
+
+Bash:
+```bash
+slugify() {
+  case "$1" in
+    /) echo _root ;;
+    *) echo "$1" | sed -E 's|\?.*||; s|^/||; s|/|_|g; s|[^a-zA-Z0-9_]|_|g; s|__+|_|g; s|^_||; s|_$||' | tr A-Z a-z ;;
+  esac
+}
+```
+
+**For each URL, drive Playwright MCP** (these are MCP tool calls, not bash):
+
+For each `path` in `$URLS`:
+
+1. `mcp__playwright__browser_navigate({ url: "<BASE_URL><path>" })`
+2. `mcp__playwright__browser_snapshot({ filename: "<EVIDENCE_DIR>/snapshots/<urlslug>.md" })`
+3. `mcp__playwright__browser_take_screenshot({ type: "png", fullPage: true, filename: "<EVIDENCE_DIR>/screenshots/<urlslug>.png" })`
+4. `mcp__playwright__browser_console_messages({ level: "warning" })`
+
+After step 4, append to `<EVIDENCE_DIR>/console.txt`:
+```
+=== <path> ===
+<the console messages text>
+```
+
+**Analyze and write verdict:**
+
+```bash
+VERDICT=PASS
+REASONS=""
+for path in $URLS; do
+  s=$(slugify "$path")
+  png="$EVIDENCE_DIR/screenshots/${s}.png"
+  snap="$EVIDENCE_DIR/snapshots/${s}.md"
+  if [ ! -s "$png" ]; then
+    VERDICT=FAIL; REASONS="$REASONS
+- $path: screenshot missing"
+  else
+    sz=$(stat -f%z "$png" 2>/dev/null || stat -c%s "$png" 2>/dev/null)
+    if [ "$sz" -lt 1024 ]; then
+      VERDICT=FAIL; REASONS="$REASONS
+- $path: screenshot < 1KB (likely blank)"
+    fi
+  fi
+  if [ ! -s "$snap" ]; then
+    VERDICT=FAIL; REASONS="$REASONS
+- $path: accessibility snapshot empty"
+  fi
+done
+if [ "$FAIL_CONSOLE" = "true" ] && grep -qiE "\\[error\\]|console\\.error|TypeError|ReferenceError" "$EVIDENCE_DIR/console.txt" 2>/dev/null; then
+  VERDICT=FAIL; REASONS="$REASONS
+- console error(s) detected — see console.txt"
+fi
+
+cat > "$EVIDENCE_DIR/summary.md" <<EOF
+# Visual verification summary
+
+**Slug:** <SLUG>
+**Date:** $(date -Iseconds 2>/dev/null || date)
+**Mode:** $MODE
+**Base URL:** $BASE_URL
+**URLs visited:** $(echo $URLS | tr '\n' ' ')
+**Verdict:** $VERDICT
+
+## Reasons (if FAIL)
+$REASONS
+
+## Files
+- screenshots/ — PNG per URL
+- snapshots/   — accessibility tree per URL
+- console.txt  — browser console output per URL
+EOF
+```
+
+**Cleanup dev server:**
+
+```bash
+[ -n "$DEV_PID" ] && kill $DEV_PID 2>/dev/null && echo "Killed dev server PID $DEV_PID"
+```
+
+**Apply verdict:**
+
+- `VERDICT=PASS` → proceed to Phase 10.
+- `VERDICT=FAIL` and `MODE=required` → STOP. Print contents of `summary.md`. Do NOT merge.
+- `VERDICT=FAIL` and `MODE=best_effort` → warn, print summary, proceed to Phase 10.
 
 ---
 
