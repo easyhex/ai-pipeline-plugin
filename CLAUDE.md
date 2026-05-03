@@ -20,6 +20,7 @@ This file applies to anyone (human or AI agent) editing this **plugin repo**. It
 5. **Two READMEs**: `README.md` (English) and `README_RU.md` (Russian) must be updated together.
 6. **No git push from inside Claude.** User pushes manually.
 7. **Serena memory is the 5th context layer.** Any change to `commands/feature.md`, `commands/improve.md`, `commands/plan-improve.md`, or `agents/senior-critic.md` must keep the memory read/write logic intact (Phase 1 ground reads memories; gates auto-write suggested memories from the critic). Do not duplicate memory writes across multiple commands.
+8. **Playwright MCP is the 6th context layer (v0.3.0+).** The visual sub-step is canonical only in `commands/feature.md` Phase 9. `/improve` and `/fix` reference it; do NOT duplicate the bash/MCP block. The settings schema (`pipeline.visual_verify` in `assets/templates/settings.json`) is the source of truth for behavior; any new field must be reflected in `assets/templates/CLAUDE.md` and `assets/templates/PIPELINE.md`.
 
 ## Smoke test workflow
 
@@ -48,6 +49,7 @@ rm -rf /tmp/ai-pipeline-smoke-*
 - 1.x → semver enforced (breaking changes only on major)
 - Tag every release: `git tag v<version> && git push origin v<version>`
 - v0.2.0 adds Serena memory integration; new prereq is `uv` + `serena-agent` (auto-installed by `/init`)
+- v0.3.0 adds Playwright-MCP visual-verify gate for frontend projects; new prereq is `npx @playwright/mcp@latest` registered as MCP server (auto-registered by `/init` if `npx` is available)
 
 ## What this plugin does NOT do
 
