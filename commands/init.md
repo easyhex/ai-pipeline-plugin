@@ -323,6 +323,7 @@ Wrote:
 Initialized:
   - git (first commit: <sha>)
   - beads (epic: <epic-id>)  [or: skipped — bd not installed]
+  - Playwright MCP             [or: skipped — npx missing]
 
 Next steps:
   1. Review docs/architecture.md, docs/features.md, docs/roadmap.md
