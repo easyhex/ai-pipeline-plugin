@@ -285,7 +285,7 @@ else
   if [ -z "$SKIP_VISUAL" ]; then
     bash -c "$DEV_CMD" >/tmp/ai-pipeline-dev.log 2>&1 &
     DEV_PID=$!
-    trap "[ -n \"$DEV_PID\" ] && kill $DEV_PID 2>/dev/null" EXIT
+    trap '[ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null' EXIT
     UP=no
     for i in $(seq 1 $TIMEOUT); do
       if curl -sf -o /dev/null -m 2 "$BASE_URL"; then
@@ -377,7 +377,7 @@ for path in $URLS; do
 - $path: accessibility snapshot empty"
   fi
 done
-if [ "$FAIL_CONSOLE" = "true" ] && grep -qiE "\\[error\\]|console\\.error|TypeError|ReferenceError" "$EVIDENCE_DIR/console.txt" 2>/dev/null; then
+if [ "$FAIL_CONSOLE" = "true" ] && grep -qiE '\[error\]|console\.error|TypeError|ReferenceError' "$EVIDENCE_DIR/console.txt" 2>/dev/null; then
   VERDICT=FAIL; REASONS="$REASONS
 - console error(s) detected — see console.txt"
 fi
@@ -406,6 +406,7 @@ EOF
 
 ```bash
 [ -n "$DEV_PID" ] && kill $DEV_PID 2>/dev/null && echo "Killed dev server PID $DEV_PID"
+trap - EXIT
 ```
 
 **Apply verdict:**
