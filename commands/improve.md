@@ -51,6 +51,7 @@ All other phases run identically to `/feature`. Reference `.claude/commands/feat
 
 - **Phase 5 (Beads tasks):** Update `docs/features.md` should NOT add a new feature. Instead, append a note to the existing feature's line: `(behavior change in progress: <slug>)`.
 - **Phase 8 (Critic gate-2):** The critic should be told this is an improvement; it pays special attention to "did this break the existing behavior the feature already shipped?" and "are there regression tests?"
+- **Phase 9 (Verify, including 9b visual):** Inherited from `/feature` Phase 9 — visual sub-step runs for frontend projects. The brainstorm in Phase 2 must include `## URLs to verify` listing the affected paths (the changed routes plus any cross-impacted views). For an improvement that doesn't change any URL, list at least `/`.
 - **Phase 11 (Master Plan update):** Do NOT move anything in `docs/features.md` (the feature was already Shipped). Just remove the `(behavior change in progress)` note. Optionally append a `- behavior changed YYYY-MM-DD: <slug>` sub-bullet under the feature.
 - **Memory hooks**: Same as `/feature.md` — Phase 1 reads relevant Serena memories; Phase 8 auto-writes critic-suggested memories.
 
