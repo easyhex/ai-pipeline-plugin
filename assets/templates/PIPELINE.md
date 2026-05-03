@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 6-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 7-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 6 user-facing commands
+## The 7 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Asks ~3 clarifying questions, fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, scaffolds the project skeleton, runs `git init`, runs `bd init`, makes the first commit. Refuses to run if the current folder already contains feature code.
@@ -40,6 +40,7 @@ Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__ser
 | 7 | TDD loop | RED → verify-fail → GREEN → verify-pass → REFACTOR → `git commit` per task | `superpowers:test-driven-development` |
 | 8 | critic-2 | Senior-critic reviews the cumulative diff. + auto-write suggested memories. | `.claude/agents/senior-critic.md` |
 | 9 | verify | Runs proving commands, reads exit codes | `superpowers:verification-before-completion` |
+| 9b | visual-verify (frontend only) | Drives Playwright MCP across spec's `## URLs to verify`, captures screenshot + a11y snapshot + console; verdict in `docs/superpowers/visual-evidence/<slug>/summary.md` | inline in command file |
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |
 | 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped" | inline in command file |
 
@@ -88,7 +89,7 @@ docs/superpowers/critic-reports/YYYY-MM-DD-<slug>-gate{1,2}.md
 
 ## Context layers
 
-The pipeline reads from 5 context layers:
+The pipeline reads from 6 context layers:
 
 | Layer | Storage | Stores | Read in | Written in |
 |---|---|---|---|---|
@@ -97,6 +98,7 @@ The pipeline reads from 5 context layers:
 | **Master Plan** | `docs/{architecture,features,roadmap}.md` | what+how+priorities | ground phase | `/init`, `/plan-improve`, `/feature` (features.md only) |
 | **Context7** | live MCP query | external library docs | ground phase | n/a (read-only) |
 | **Serena memory** | `.serena/memories/*.md` | project conventions + design decisions | `/feature`/`/improve` ground | senior-critic at gate-2 (gate-1 for `/plan-improve`), `/remember` |
+| **Playwright MCP** | live browser session | live UI state (screenshots, a11y, console) | Phase 9b of `/feature`, `/improve`, `/fix` | n/a (read-only — evidence lands in `docs/superpowers/visual-evidence/<slug>/`) |
 
 The layers do NOT overlap by design:
 - Bug? → lesson

@@ -1,6 +1,6 @@
 # Pipeline rules
 
-This project uses a 6-command AI development pipeline.
+This project uses a 7-command AI development pipeline.
 Source of truth: `docs-meta/PIPELINE.md`.
 
 ## User-facing commands (the only commands you should ever ask the user to run)
@@ -81,3 +81,24 @@ Stored in `.serena/memories/` — one markdown file per topic. Holds **stable pr
 - `context7-plugin` — live library docs
 
 If any are missing, the orchestrator should warn but continue with degraded behavior.
+
+## Playwright MCP (visual-verify gate)
+
+For frontend projects, Phase 9 of `/feature`, `/improve`, `/fix` runs a **visual sub-step** that drives a real browser via Playwright MCP, navigates to URLs the spec lists under `## URLs to verify`, captures screenshots and accessibility snapshots, and stops the pipeline on:
+
+- HTTP 4xx/5xx
+- console errors (when `pipeline.visual_verify.fail_on_console_error: true`)
+- empty/blank screenshots
+- missing Playwright MCP / dev server
+
+Settings live under `.claude/settings.json` → `pipeline.visual_verify`:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `mode` | `required` | `required` / `best_effort` / `skip` |
+| `base_url` | `http://localhost:3000` | probed first; if not reachable, pipeline starts dev server |
+| `dev_command` | `auto` | `auto` reads `package.json scripts.dev`; otherwise explicit shell command |
+| `dev_port_timeout_sec` | `60` | max wait for dev server boot |
+| `fail_on_console_error` | `true` | console errors fail the gate in `required` mode |
+
+Evidence is stored at `docs/superpowers/visual-evidence/<slug>/`.

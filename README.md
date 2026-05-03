@@ -1,6 +1,6 @@
 # ai-pipeline
 
-A Claude Code plugin that ships a 7-command AI development pipeline with an automatic senior-engineer critic at two gates, a lessons-learned flywheel, and Serena memory as a 5th context layer.
+A Claude Code plugin that ships a 7-command AI development pipeline with an automatic senior-engineer critic at two gates, a lessons-learned flywheel, Serena memory for stable project knowledge, and a Playwright MCP visual-verify gate — six context layers in total.
 
 ## What you get
 
@@ -52,6 +52,10 @@ After `/init` completes, you start building features:
 
 The pipeline runs end-to-end automatically — ground (read codebase + lessons + Context7), brainstorm spec, critic gate-1, plan, beads tasks, TDD loop with auto-commits, critic gate-2, verify, merge or PR — only stopping when the brainstorm has a real clarifying question or the critic surfaces a Critical finding.
 
+## Pipeline highlights
+
+- **Visual verification gate (v0.3.0)** — for frontend projects, Phase 9 drives Playwright MCP across the URLs listed in the spec, captures screenshots + a11y snapshots, fails the pipeline on console errors or blank renders. Configurable via `pipeline.visual_verify` in `.claude/settings.json`.
+
 ## Prerequisites
 
 The plugin depends on 4 other Claude Code plugins. `/init` auto-installs any that are missing (with consent):
@@ -83,7 +87,7 @@ The pipeline has three layers:
 
 Per-project files written by `/init`:
 
-- `CLAUDE.md` — pipeline rules and the 6-command surface
+- `CLAUDE.md` — pipeline rules and the 7-command surface
 - `docs/architecture.md` — Master Plan: target architecture (≤300 lines)
 - `docs/features.md` — Master Plan: feature inventory (≤500 lines)
 - `docs/roadmap.md` — Master Plan: ordered priorities (≤200 lines)

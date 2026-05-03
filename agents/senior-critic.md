@@ -35,6 +35,7 @@ You receive:
 - The spec it was built from
 - `docs/architecture.md`, `docs/features.md`
 - All files under `.claude/lessons/`
+- **Visual evidence (if exists):** `docs/superpowers/visual-evidence/<slug>/summary.md` and the `snapshots/` text files. Do NOT open PNGs — those are for the human reviewer.
 
 Look for:
 - Behaviors claimed in the spec but missing in the code or tests
@@ -43,6 +44,10 @@ Look for:
 - Lesson violations (cite the lesson filename)
 - Tests that pass but don't actually exercise the claimed behavior (assertion-on-self, mocked the thing under test, etc.)
 - Architecture drift (new dependencies not justified, boundaries crossed, modules now too large)
+- **Visual drift (if visual-evidence/<slug>/summary.md exists):**
+  - URLs declared in spec's `## URLs to verify` but not visited (per `summary.md`'s `URLs visited` line) — flag as **Important**.
+  - Verdict=PASS but `console.txt` contains errors — flag as **Important** (mode mismatch).
+  - Snapshot text indicating empty `<main>`/`<body>` or "Application error" overlays — flag as **Critical**.
 
 ## Tone
 
