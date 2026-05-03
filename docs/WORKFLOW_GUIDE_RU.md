@@ -99,6 +99,25 @@ claude
 
 Всё остальное — автоматически.
 
+### Визуальная верификация (Фаза 9b, v0.3.0)
+
+Для фронтенд-проектов после стандартной фазы verify запускается **визуальный под-этап**: pipeline через Playwright MCP открывает каждый URL из секции `## URLs to verify` в спеке, делает скриншот + a11y snapshot + читает console, и сохраняет всё в `docs/superpowers/visual-evidence/<slug>/`.
+
+**Триггер фронтенда**: `package.json` содержит зависимость на react/vue/svelte/next/nuxt/@angular/core/solid-js/preact/qwik/astro **или** в корне есть `index.html`.
+
+**Жизненный цикл dev-сервера** (гибрид):
+1. Сначала пробуем `base_url` (по умолчанию `http://localhost:3000`).
+2. Если не отвечает — pipeline стартует `npm run dev` (или `npm run start`) в фоне, ждёт 200 OK до 60 секунд, после визуала убивает процесс.
+
+**Критерии FAIL**: HTTP 4xx/5xx, console.error (при `fail_on_console_error: true`), пустой/чёрный скриншот (<1KB), таймаут dev-сервера.
+
+**Режимы** (`.claude/settings.json` → `pipeline.visual_verify.mode`):
+- `required` (по умолчанию) — FAIL стопит pipeline
+- `best_effort` — warn и продолжаем
+- `skip` — фаза 9b отключена полностью
+
+Если в спеке нет секции `## URLs to verify`, проверяется только `/`.
+
 ---
 
 ## 7 пользовательских команд
