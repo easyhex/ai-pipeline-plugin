@@ -52,6 +52,10 @@ After `/init` completes, you start building features:
 
 The pipeline runs end-to-end automatically — ground (read codebase + lessons + Context7), brainstorm spec, critic gate-1, plan, beads tasks, TDD loop with auto-commits, critic gate-2, verify, merge or PR — only stopping when the brainstorm has a real clarifying question or the critic surfaces a Critical finding.
 
+## Pipeline highlights
+
+- **Visual verification gate (v0.3.0)** — for frontend projects, Phase 9 drives Playwright MCP across the URLs listed in the spec, captures screenshots + a11y snapshots, fails the pipeline on console errors or blank renders. Configurable via `pipeline.visual_verify` in `.claude/settings.json`.
+
 ## Prerequisites
 
 The plugin depends on 4 other Claude Code plugins. `/init` auto-installs any that are missing (with consent):
