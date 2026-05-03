@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 6-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 7-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 6 user-facing commands
+## The 7 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Asks ~3 clarifying questions, fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, scaffolds the project skeleton, runs `git init`, runs `bd init`, makes the first commit. Refuses to run if the current folder already contains feature code.

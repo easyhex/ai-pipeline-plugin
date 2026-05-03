@@ -1,6 +1,6 @@
 # Pipeline rules
 
-This project uses a 6-command AI development pipeline.
+This project uses a 7-command AI development pipeline.
 Source of truth: `docs-meta/PIPELINE.md`.
 
 ## User-facing commands (the only commands you should ever ask the user to run)

@@ -1,6 +1,6 @@
 # ai-pipeline
 
-A Claude Code plugin that ships a 7-command AI development pipeline with an automatic senior-engineer critic at two gates, a lessons-learned flywheel, and Serena memory as a 5th context layer.
+A Claude Code plugin that ships a 7-command AI development pipeline with an automatic senior-engineer critic at two gates, a lessons-learned flywheel, Serena memory for stable project knowledge, and a Playwright MCP visual-verify gate — six context layers in total.
 
 ## What you get
 
@@ -87,7 +87,7 @@ The pipeline has three layers:
 
 Per-project files written by `/init`:
 
-- `CLAUDE.md` — pipeline rules and the 6-command surface
+- `CLAUDE.md` — pipeline rules and the 7-command surface
 - `docs/architecture.md` — Master Plan: target architecture (≤300 lines)
 - `docs/features.md` — Master Plan: feature inventory (≤500 lines)
 - `docs/roadmap.md` — Master Plan: ordered priorities (≤200 lines)
