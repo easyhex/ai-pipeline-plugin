@@ -35,6 +35,12 @@ Source: User decisions #N | assumption
 |---|---|---|---|---|
 | NFR-01 | <e.g. relative error> | <e.g. ≤ 1e-9 vs analytic oracle> | <e.g. pytest -m oracle> | <e.g. runtime ≤ 2× current> |
 
+## Mathematical approach   ← compute project classes: MANDATORY when the feature touches numeric computation
+<the problem in mathematical terms; the chosen algorithm with a one-line stability/complexity suitability justification; known failure regimes (ill-conditioning, stiffness, domain boundaries); a validation plan naming real or reference data DISTINCT from the unit-test oracles>
+
+## Interface contracts   ← compute classes: MANDATORY for every public numerical interface
+<per interface: Preconditions (input domain — e.g. SPD matrix, sorted knots) / Postconditions (with tolerance) / Invariants preserved (conservation, symmetry, monotonicity)>
+
 ## Analogs considered
 <per relevant row of docs/analysis/analogs.md: what they do, what we copy/avoid — or "none relevant">
 

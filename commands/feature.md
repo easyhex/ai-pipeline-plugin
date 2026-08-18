@@ -162,7 +162,7 @@ Present the decision digest and WAIT for explicit approval. This gate runs at ev
 
 **Pre-condition:** the spec file must contain an `**Approved by user:**` line (written by Phase 3.5). If absent → STOP: the playback gate was skipped; return to Phase 3.5.
 
-Invoke `superpowers:writing-plans` on the spec at `docs/superpowers/specs/<SLUG>.md`. Save the plan to:
+Invoke `superpowers:writing-plans` on the spec at `docs/superpowers/specs/<SLUG>.md`. **For any task implementing numeric computation, the plan MUST name the oracle type (taxonomy: `docs-meta/NUMERICS_TESTING.md`) and the tolerance with its one-line justification** — a numerical task without a named oracle is an incomplete plan. Save the plan to:
 ```
 docs/superpowers/plans/<SLUG>.md
 ```
@@ -218,7 +218,8 @@ For each ready task:
 
 **Stop conditions:**
 - 3 failed RED→GREEN attempts on a single task → stop, surface to user
-- Test that should fail doesn't fail → stop (test is broken)
+- Test that should fail doesn't fail → stop (test is broken; for numeric changes use the feature-flag honest-RED protocol from `docs-meta/NUMERICS_TESTING.md`)
+- Tolerance chosen or loosened to make a test pass → stop (derive why the bound is correct, or treat it as a real bug — `docs-meta/NUMERICS_TESTING.md`)
 - Verification command fails → stop
 
 **After sign-off, open decisions do not stop the build:** a decision that surfaces mid-TDD is recorded in the spec as an Assumption plus a `TBC:` marker, the conservative option is taken, and gate-2 surfaces it (see `docs-meta/ELICITATION.md`, "Post-approval"). Exception: if it invalidates the approved digest (scope, interface, stated tolerance) → STOP and re-play Phase 3.5.
@@ -481,9 +482,33 @@ trap - EXIT
 
 **Apply verdict:**
 
-- `VERDICT=PASS` → proceed to Phase 10.
+- `VERDICT=PASS` → proceed to Phase 9c.
 - `VERDICT=FAIL` and `MODE=required` → STOP. Print contents of `summary.md`. Do NOT merge.
-- `VERDICT=FAIL` and `MODE=best_effort` → warn, print summary, proceed to Phase 10.
+- `VERDICT=FAIL` and `MODE=best_effort` → warn, print summary, proceed to Phase 9c.
+
+### Phase 9c: Quantitative verification (compute classes / declared NFRs)
+
+**Resolve the mode** (statelessly, in this block):
+
+```bash
+QMODE=$(jq -r '.pipeline.quant_verify.mode // "by_class"' .claude/settings.json 2>/dev/null || echo by_class)
+PCLASS=$(jq -r '.pipeline.project_class // "unset"' .claude/settings.json 2>/dev/null || echo unset)
+if [ "$QMODE" = "by_class" ]; then
+  case "$PCLASS" in numerical-library|simulation|data-pipeline) QMODE=required ;; *) QMODE=skip ;; esac
+fi
+```
+
+If `QMODE=skip` AND the feature's requirements file declares no NFR proving commands → skip to Phase 10. Otherwise:
+
+1. **Evidence dir:** `docs/superpowers/quant-evidence/<SLUG>/`.
+2. **Collect checks:** every NFR proving command from `docs/requirements/<F_ID>-<slug>.md`, plus `pipeline.quant_verify.{property_test_command, benchmark_command, tolerance_report_command, budgets}` where set. An NFR whose `verify.method` is `Test` but has no proving command → record as an **Important finding** in summary.md (not a block).
+3. **Run** each command fresh, once per seed in `pipeline.quant_verify.seeds` (export `SEED` to the command's environment); capture exit codes and outputs. **pass^k**: deterministic oracles pass only if ALL seeds pass; **pass@k** applies only to NFRs explicitly declared statistical — report both numbers.
+4. **Mutation sub-step** per `pipeline.quant_verify.mutation`: `off` → skip; `advisory` (default) → run `mutation_command` if set, surviving mutants become Important findings in summary.md; `required` → survivors above the declared threshold FAIL the gate.
+5. **Code-link audit** (advisory): scan diffed source for `@relation(F-*/FR-*)` markers; for every requirement `code:` entry, recompute the symbol-body sha256 — mismatch → mark the link **suspect** in summary.md; public numerical functions in the diff with no marker, and requirements with no linked code/test → coverage notes.
+6. **Write evidence:** `run-manifest.md` (commit SHA, seed set, platform, dependency versions, input-data hashes) and `summary.md` (per-check table, pass^k / pass@k, advisory findings, verdict).
+7. **Verdict — anti-overclaim rule:** `verified` ONLY if every declared oracle/proving command was actually executed and passed for all required seeds; any declared-but-unexecuted check → `partial` (list what did not run); any failed check → `failed`.
+
+**Apply:** `verified` → Phase 10. `partial`/`failed` + `QMODE=required` → STOP, print summary.md, do NOT merge. `partial`/`failed` + `best_effort` → warn, proceed. A PASS without a run-manifest does not count as `verified`.
 
 ---
 
