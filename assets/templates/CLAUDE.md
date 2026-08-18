@@ -1,7 +1,7 @@
 # Pipeline rules
 
-This project uses a 7-command AI development pipeline.
-Source of truth: `docs-meta/PIPELINE.md`.
+This project uses an 8-command AI development pipeline.
+Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICITATION.md`.
 
 ## User-facing commands (the only commands you should ever ask the user to run)
 
@@ -14,6 +14,7 @@ Source of truth: `docs-meta/PIPELINE.md`.
 | `/fix "<bug>"` | Debug + auto-record lesson |
 | `/lesson` | Manually record a lesson (rare) |
 | `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
+| `/questionnaire "<topic>"` | Generate a fill-in requirements questionnaire for a client/expert (knowledge in someone else's head) |
 
 **Never expose internal phases** (`/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, `/finish`) to the user as commands. They run automatically inside `/feature`, `/improve`, `/fix`.
 
@@ -26,6 +27,8 @@ Source of truth: `docs-meta/PIPELINE.md`.
 5. **Critic runs automatically** at gate-1 (post-spec) and gate-2 (post-diff). Critical findings block continuation unless the user explicitly overrides with a written reason saved to the report.
 6. **Every TDD GREEN cycle ends with a `git commit`.** Every `/fix` ends with a lesson written to `.claude/lessons/`.
 7. **Before starting `/feature` or `/improve`:** list `.serena/memories/` and read any memory whose name matches the work's topic or affected files. Cite the memory name when applying its content.
+8. **Elicitation follows `docs-meta/ELICITATION.md`.** Facts are looked up, never asked; decisions go to the user as numbered frontier rounds with ➡️ recommended answers, and the pipeline waits. The spec playback gate (Phase 3.5) requires explicit user approval before any plan or code — the original request authorizes planning only.
+9. **Artifact language:** prose in the conversation's language; IDs (`F-001`), statuses, filenames, and greppable markers (`[NEEDS CLARIFICATION]`, `TBC:`, `TBD:`) always English, never localized.
 
 ## Master Plan files
 
