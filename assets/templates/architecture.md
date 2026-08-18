@@ -5,6 +5,9 @@
 **Status:** UNFILLED — run `/init "<app description>"` to populate.
 
 ---
+doc_version: 1
+last_changed: UNSET
+---
 
 ## 1. What this app is
 
@@ -44,6 +47,13 @@ Example shape:
 ## 6. Hard architectural constraints
 
 <bullet list of things that MUST be true — security, compliance, performance budgets. Empty is OK.>
+
+---
+
+## Change history
+
+| Date | Version | Change | Source |
+|---|---|---|---|
 
 ---
 

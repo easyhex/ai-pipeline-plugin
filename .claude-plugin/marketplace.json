@@ -6,8 +6,8 @@
     {
       "name": "ai-pipeline",
       "source": "./",
-      "description": "8-command AI development pipeline with frontier-round elicitation, spec sign-off gate, auto-critic, lessons, Serena memory, and Playwright-MCP visual gate.",
-      "version": "0.4.0"
+      "description": "9-command AI development pipeline with frontier-round elicitation, spec sign-off gate, living EARS requirements + risk register, auto-critic, lessons, Serena memory, and Playwright-MCP visual gate.",
+      "version": "0.5.0"
     }
   ]
 }

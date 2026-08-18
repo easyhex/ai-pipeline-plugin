@@ -5,6 +5,11 @@
 **Format per feature (one line each):**
 `- [ID] <slug> — <one-line description> — <status: planned|in-progress|shipped|deprecated>`
 
+Shipped features gain a version stamp from `/release`: `— shipped YYYY-MM-DD in vX.Y.Z`. Every shipped feature has a living requirements file at `docs/requirements/<ID>-<slug>.md`.
+
+---
+doc_version: 1
+last_changed: UNSET
 ---
 
 ## Planned
@@ -22,6 +27,13 @@
 ## Deprecated
 
 - [ ] <none yet — manual move when removing a feature>
+
+---
+
+## Change history
+
+| Date | Version | Change | Source |
+|---|---|---|---|
 
 ---
 

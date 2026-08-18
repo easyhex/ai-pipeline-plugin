@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 8-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 9-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 8 user-facing commands
+## The 9 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
@@ -28,6 +28,9 @@ Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__ser
 ### `/questionnaire "<topic>"`
 Generate a requirements questionnaire for someone else's head (client, domain expert, stakeholder). Interviews you only about the send — who it goes to and what must come back — then writes a fill-in Markdown document to `docs/requirements/`. Answered questionnaires are read by the next `/feature`/`/improve` ground phase; answers become "User decisions" with provenance.
 
+### `/release`
+Cut a product release: proposes the next semver from shipped-since-last-tag features (confirmed by one ❓), writes a human-register `CHANGELOG.md` from spec Goals (never from commit messages) including a mid-based "requirements changed since last release" section, stamps `in vX.Y.Z` into `docs/features.md`, commits and tags locally. Never pushes.
+
 ---
 
 ## Internal phases (run automatically inside `/feature`, `/improve`, `/fix`)
@@ -37,7 +40,7 @@ Generate a requirements questionnaire for someone else's head (client, domain ex
 | 1 | ground | Reads `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
 | 2 | brainstorm | Generates spec → saves to `docs/superpowers/specs/YYYY-MM-DD-<slug>.md` | `superpowers:brainstorming` |
 | 3 | critic-1 | Senior-critic reviews the spec | `senior-critic` subagent (ships with the ai-pipeline plugin) |
-| 3.5 | playback gate | The single blocking stop: decision digest (request verbatim / decisions / assumptions / out of scope / seams / open markers) → explicit user approval, recorded in the spec. The original request authorizes planning only. | inline in command file |
+| 3.5 | playback gate | The single blocking stop: decision digest (request verbatim / decisions / assumptions / out of scope / seams / open markers) → explicit user approval, recorded in the spec. On approval: F-ID minted + living requirements file created (`docs/requirements/`, per REQUIREMENTS_FORMAT.md, mid uuids). The original request authorizes planning only. | inline in command file |
 | 4 | plan | Decomposes into 2-5 min tasks (pre-condition: spec carries `**Approved by user:**`) | `superpowers:writing-plans` |
 | 5 | bd-tasks | Creates beads tasks + dependencies | `bd create`, `bd dep add` |
 | 6 | worktree (conditional) | Isolates work in a worktree if >3 sub-tasks | `superpowers:using-git-worktrees` |
@@ -46,7 +49,7 @@ Generate a requirements questionnaire for someone else's head (client, domain ex
 | 9 | verify | Runs proving commands, reads exit codes | `superpowers:verification-before-completion` |
 | 9b | visual-verify (frontend only) | Drives Playwright MCP across spec's `## URLs to verify`, captures screenshot + a11y snapshot + console; verdict in `docs/superpowers/visual-evidence/<slug>/summary.md` | inline in command file |
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |
-| 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped" | inline in command file |
+| 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped"; flips the requirements file to `shipped`; appends the `docs/TRACEABILITY.md` row (F-ID → spec → plan → gates → evidence → merge SHA) | inline in command file |
 
 `/fix` replaces phase 2 with `superpowers:systematic-debugging`, runs Phase 3.5 as a light digest over its diagnosis, and replaces phase 11 with lesson-write.
 
@@ -101,7 +104,7 @@ The pipeline reads from 6 context layers:
 |---|---|---|---|---|
 | **Beads** | `.beads/` | tasks + dependencies | every `bd ready` | every command |
 | **Lessons** | `.claude/lessons/*.md` | bug prevention rules | every phase (lesson trigger match) | `/fix`, `/lesson` |
-| **Master Plan** | `docs/{architecture,features,roadmap}.md` | what+how+priorities | ground phase | `/init`, `/plan-improve`, `/feature` (features.md only) |
+| **Master Plan** | `docs/{architecture,features,roadmap,risks}.md` + `docs/glossary.md`, `docs/analysis/analogs.md`, `docs/requirements/` | what+how+priorities+accepted risk+language+requirements | ground phase | `/init`, `/plan-improve`, `/feature`+`/improve` (features.md, requirements, traceability), gate overrides (risks.md) |
 | **Context7** | live MCP query | external library docs | ground phase | n/a (read-only) |
 | **Serena memory** | `.serena/memories/*.md` | project conventions + design decisions | `/feature`/`/improve` ground | senior-critic at gate-2 (gate-1 for `/plan-improve`), `/remember` |
 | **Playwright MCP** | live browser session | live UI state (screenshots, a11y, console) | Phase 9b of `/feature`, `/improve`, `/fix` | n/a (read-only — evidence lands in `docs/superpowers/visual-evidence/<slug>/`) |

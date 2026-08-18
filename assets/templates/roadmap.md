@@ -5,6 +5,9 @@
 The roadmap answers: **what comes next, and why?** Order matters; the top item is the next thing to build.
 
 ---
+doc_version: 1
+last_changed: UNSET
+---
 
 ## Now (next 1-3 features)
 
@@ -22,7 +25,12 @@ The roadmap answers: **what comes next, and why?** Order matters; the top item i
 
 ## Explicitly NOT doing (and why)
 
-- <feature-slug> — <one sentence on why we're not building this>
+- <feature-slug> — <one sentence; cite the relevant row of `docs/analysis/analogs.md` where an analog informed the refusal>
+
+## Change history
+
+| Date | Version | Change | Source |
+|---|---|---|---|
 
 ---
 
