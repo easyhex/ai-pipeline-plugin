@@ -218,6 +218,70 @@ if grep -qF 'must contain an `**Approved by user:**` line' commands/feature.md; 
   pass "T26 Phase 4 approval pre-condition present"
 else fail "T26 Phase 4 no longer enforces the playback approval"; fi
 
+# ---- v0.5 requirements contract ----
+
+# T27 — SPEC_FORMAT.md is the single home of the spec schema + EARS grammar.
+if [ -f assets/templates/SPEC_FORMAT.md ] \
+   && grep -q 'SHALL' assets/templates/SPEC_FORMAT.md \
+   && grep -qc 'While\|When\|Where\|If' assets/templates/SPEC_FORMAT.md >/dev/null \
+   && grep -q 'SPEC_FORMAT' commands/feature.md \
+   && grep -q 'EARS' agents/senior-critic.md; then
+  pass "T27 SPEC_FORMAT + EARS grammar shipped, referenced, critic-enforced"
+else fail "T27 SPEC_FORMAT/EARS missing or unenforced"; fi
+
+# T28 — living requirement files: format ships, feature.md creates them with mid uuids,
+# improve.md amends them, and the [F-XXX] placeholder is gone.
+if [ -f assets/templates/REQUIREMENTS_FORMAT.md ] \
+   && grep -q 'mid:' assets/templates/REQUIREMENTS_FORMAT.md \
+   && grep -q 'REQUIREMENTS_FORMAT' commands/feature.md \
+   && grep -q 'REQUIREMENTS_FORMAT\|docs/requirements/F-' commands/improve.md \
+   && ! grep -q 'F-XXX' commands/feature.md; then
+  pass "T28 living requirement files with mid identity; F-XXX placeholder gone"
+else fail "T28 requirements files missing, unminted, or F-XXX placeholder survives"; fi
+
+# T29 — risk register: template ships, overrides append to it, ground+critic read it.
+if [ -f assets/templates/risks.md ] \
+   && grep -q 'risks.md' commands/feature.md \
+   && grep -q 'risks.md' commands/plan-improve.md \
+   && grep -q 'risks.md' agents/senior-critic.md; then
+  pass "T29 risk register wired into overrides, ground, and critic"
+else fail "T29 accepted risk still evaporates (no risks.md wiring)"; fi
+
+# T30 — /release ships: CHANGELOG, mid-diff, local tag, no push.
+if [ -f commands/release.md ] && grep -q 'CHANGELOG' commands/release.md \
+   && grep -q 'mid' commands/release.md \
+   && grep -qi 'do NOT push\|never push' commands/release.md; then
+  pass "T30 /release with CHANGELOG + mid-diff + no-push"
+else fail "T30 /release missing or incomplete"; fi
+
+# T31 — traceability: Phase 11 appends a TRACEABILITY.md row.
+if grep -q 'TRACEABILITY' commands/feature.md; then
+  pass "T31 traceability row appended at Phase 11"
+else fail "T31 no traceability join (requirement→spec→gates→SHA)"; fi
+
+# T32 — glossary + analogs templates ship and are read in ground.
+if [ -f assets/templates/glossary.md ] && [ -f assets/templates/analogs.md ] \
+   && grep -q 'glossary' commands/feature.md && grep -q 'analogs' commands/feature.md \
+   && grep -q 'analogs' commands/init.md; then
+  pass "T32 glossary + analogs shipped and grounded"
+else fail "T32 glossary/analogs missing or never read"; fi
+
+# T33 — ADRs: format ships; critic marks [decision]; orchestrator writes docs/decisions/.
+if [ -f assets/templates/ADR_FORMAT.md ] \
+   && grep -q '\[decision\]' agents/senior-critic.md \
+   && grep -q 'docs/decisions/' commands/feature.md; then
+  pass "T33 ADR pipeline (critic marks, orchestrator writes)"
+else fail "T33 decision rationale still uncommitted (no ADR path)"; fi
+
+# T34 — Master Plan docs are versioned: doc_version in all four templates, bumped by /plan-improve.
+if grep -q 'doc_version' assets/templates/architecture.md \
+   && grep -q 'doc_version' assets/templates/features.md \
+   && grep -q 'doc_version' assets/templates/roadmap.md \
+   && grep -q 'doc_version' assets/templates/risks.md 2>/dev/null \
+   && grep -q 'doc_version' commands/plan-improve.md; then
+  pass "T34 Master Plan docs carry versions + change history"
+else fail "T34 Master Plan docs still mutate without version headers"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"
