@@ -30,11 +30,11 @@ The user request maps to one or more of these change types:
 - **D** — deprecating a shipped feature
 - **E** — adding/removing a hard constraint
 
-Identify which type(s). If unclear, ask the user **one** clarifying question.
+Identify which type(s). If unclear, put the question to the user in the frontier-round format (❓ + ➡️ recommended answer).
 
-## Phase 3: Clarifying questions (if needed)
+## Phase 3: Clarification round (per docs-meta/ELICITATION.md)
 
-If the request is ambiguous, ask up to 3 questions — but only if you genuinely cannot proceed without an answer. Skip if request is clear.
+Facts you can look up (current plan files, git history, code) are your job — never questions. Every open DECISION goes to the user as one numbered frontier round with recommended answers, and you wait. There is no question cap; the bound is by kind — decisions only. Skip the round only when no decisions are open.
 
 ## Phase 4: Draft the change
 
