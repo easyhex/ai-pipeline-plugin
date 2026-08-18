@@ -308,6 +308,72 @@ if grep -q 'doc_version' assets/templates/architecture.md \
   pass "T34 Master Plan docs carry versions + change history"
 else fail "T34 Master Plan docs still mutate without version headers"; fi
 
+# ---- v0.6 math contract ----
+
+# T39 — NUMERICS_TESTING.md: all five oracle types + named tolerance stop condition.
+if [ -f assets/templates/NUMERICS_TESTING.md ] \
+   && grep -qi 'analytic' assets/templates/NUMERICS_TESTING.md \
+   && grep -qi 'manufactured' assets/templates/NUMERICS_TESTING.md \
+   && grep -qi 'metamorphic\|property' assets/templates/NUMERICS_TESTING.md \
+   && grep -qi 'reference implementation' assets/templates/NUMERICS_TESTING.md \
+   && grep -qi 'convergence' assets/templates/NUMERICS_TESTING.md \
+   && grep -qi 'tolerance chosen to make the test pass' assets/templates/NUMERICS_TESTING.md \
+   && grep -q 'NUMERICS_TESTING' commands/feature.md; then
+  pass "T39 oracle taxonomy shipped and referenced"
+else fail "T39 NUMERICS_TESTING.md missing, incomplete, or unreferenced"; fi
+
+# T40 — quant_verify settings schema: in settings.json AND reflected in both templates
+# (rule: settings schema is source of truth); 9c canonical only in feature.md.
+if grep -q 'quant_verify' assets/templates/settings.json \
+   && grep -q 'quant_verify' assets/templates/CLAUDE.md \
+   && grep -q 'quant_verify' assets/templates/PIPELINE.md \
+   && [ "$(grep -l 'quant-evidence' commands/*.md | wc -l | tr -d ' ')" = "1" ]; then
+  pass "T40 quant_verify schema reflected everywhere; 9c canonical in feature.md"
+else fail "T40 quant_verify schema drift or 9c duplicated"; fi
+
+# T41 — 9c honesty semantics: run-manifest, pass^k, anti-overclaim downgrade.
+if grep -q 'run-manifest' commands/feature.md \
+   && grep -q 'pass^k' commands/feature.md \
+   && grep -qi 'partial' commands/feature.md; then
+  pass "T41 run-manifest + pass^k + verified/partial downgrade present"
+else fail "T41 quant gate can overclaim (no manifest/pass^k/partial semantics)"; fi
+
+# T42 — numeric critic: typed severities + claims quarantine + sabotage check.
+if grep -qi 'float equality\|exact float' agents/senior-critic.md \
+   && grep -qi 'tolerance fraud' agents/senior-critic.md \
+   && grep -qi 'testimony, not evidence\|without the spec' agents/senior-critic.md \
+   && grep -qi 'sabotage\|weaken.*tolerance\|deleted.*test' agents/senior-critic.md \
+   && grep -qi 'which check fails\|which test fails' agents/senior-critic.md; then
+  pass "T42 numeric critic checklist + quarantine + gap lens + sabotage check"
+else fail "T42 critic still blind to numerical failure modes"; fi
+
+# T43 — requirements schema: verify-method enum, @relation markers, suspect hashes.
+if grep -q 'Test | Analysis | Inspection | Review' assets/templates/REQUIREMENTS_FORMAT.md \
+   && grep -q '@relation' assets/templates/REQUIREMENTS_FORMAT.md \
+   && grep -qi 'suspect' assets/templates/REQUIREMENTS_FORMAT.md; then
+  pass "T43 verify-method enum + code markers + suspect links in schema"
+else fail "T43 requirements schema lacks verification-method/code-link fields"; fi
+
+# T44 — project class: asked at /init, stored, and drives visual/quant defaults; model.md ships.
+if grep -q 'project_class' commands/init.md \
+   && grep -q 'project_class' assets/templates/settings.json \
+   && [ -f assets/templates/model.md ] \
+   && grep -q 'model.md' commands/init.md; then
+  pass "T44 project class stored + model.md for compute classes"
+else fail "T44 project class missing (web defaults still forced on math projects)"; fi
+
+# T45 — numeric specs must carry Mathematical approach + Interface contracts (gate-1 Critical).
+if grep -q 'Mathematical approach' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'Interface contracts' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'Mathematical approach' agents/senior-critic.md; then
+  pass "T45 math sections mandated and critic-enforced"
+else fail "T45 numeric specs can still omit the mathematics"; fi
+
+# T46 — inheritance deltas: /improve and /fix explicitly define their 9c behavior.
+if grep -q '9c' commands/improve.md && grep -q '9c' commands/fix.md; then
+  pass "T46 /improve and /fix carry explicit 9c deltas"
+else fail "T46 9c inherited without deltas (inheritance-delta-checklist violation)"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"
