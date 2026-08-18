@@ -114,6 +114,65 @@ if [ "$N" = "1" ] && grep -q 'browser_navigate' commands/feature.md; then
   pass "T9 visual-verify MCP block lives only in feature.md"
 else fail "T9 visual-verify MCP block duplicated or missing (found in $N command files)"; fi
 
+# ---- v0.4 elicitation contract ----
+
+# T10 — ELICITATION.md is the single source of the interview technique: it exists,
+# every elicitation-running command references it, and its "Question hygiene"
+# section is never duplicated into a command file.
+if [ -f assets/templates/ELICITATION.md ] \
+   && grep -q 'ELICITATION.md' commands/feature.md \
+   && grep -q 'ELICITATION.md' commands/init.md \
+   && grep -q 'ELICITATION.md' commands/plan-improve.md \
+   && grep -q 'ELICITATION.md' commands/questionnaire.md \
+   && [ "$(grep -rl 'Question hygiene' commands/ assets/ 2>/dev/null | wc -l | tr -d ' ')" = "1" ]; then
+  pass "T10 ELICITATION.md canonical and referenced by all four commands"
+else fail "T10 elicitation primitive missing, unreferenced, or duplicated"; fi
+
+# T11 — the anti-elicitation reflex is gone.
+if grep -rqi 'proceed silently' commands/; then
+  fail "T11 'proceed silently' still present in a command file"
+else pass "T11 no 'proceed silently' in commands"; fi
+
+# T12 — playback gate exists, declares the planning-boundary rule, records approval.
+if grep -q 'Phase 3.5' commands/feature.md && grep -q 'authorizes planning only' commands/feature.md \
+   && grep -q 'Approved by user' commands/feature.md; then
+  pass "T12 playback gate with planning-boundary and approval record"
+else fail "T12 playback gate missing planning-boundary or approval record"; fi
+
+# T13 — spec provenance sections are mandated.
+if grep -q 'User decisions (verbatim)' commands/feature.md \
+   && grep -q 'Assumptions (machine, unconfirmed)' commands/feature.md \
+   && grep -q 'Out of scope (confirmed)' commands/feature.md; then
+  pass "T13 provenance sections mandated in the spec contract"
+else fail "T13 spec provenance sections not mandated"; fi
+
+# T14 — the unimplementable reply-timeout is gone; gate decisions are synchronous.
+if grep -rq '1 message exchange' commands/ assets/ 2>/dev/null; then
+  fail "T14 fictitious reply-timeout still present"
+else pass "T14 no fictitious gate timeout"; fi
+
+# T15 — Important-only critic outcome has defined behavior at both gates.
+if grep -q 'Important-only' commands/feature.md && grep -q 'Important-only' assets/templates/PIPELINE.md; then
+  pass "T15 Important-only gate outcome defined"
+else fail "T15 Important-only critic outcome undefined"; fi
+
+# T16 — /init confirms machine-drafted plans line-by-line before committing.
+if grep -q 'proposed — unconfirmed' commands/init.md && grep -q 'BEFORE the first commit' commands/init.md; then
+  pass "T16 /init line-by-line confirmation gate present"
+else fail "T16 /init still commits machine-invented plans unreviewed"; fi
+
+# T17 — ceremony weight exists and is recorded in the spec frontmatter.
+if grep -qE 'weight: (light \| standard \| deep|light\|standard\|deep)' commands/feature.md \
+   && grep -q 'weight' assets/templates/ELICITATION.md 2>/dev/null; then
+  pass "T17 ceremony weight defined and recorded in spec"
+else fail "T17 ceremony weight missing"; fi
+
+# T18 — /questionnaire ships, writes to docs/requirements/, and ground reads answers back.
+if [ -f commands/questionnaire.md ] && grep -q 'docs/requirements/' commands/questionnaire.md \
+   && grep -q 'questionnaire' commands/feature.md; then
+  pass "T18 /questionnaire command + ground-phase return path"
+else fail "T18 /questionnaire missing or no return path in ground"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"
