@@ -15,8 +15,9 @@ You will be invoked at one of two gates. The orchestrator tells you which.
 ### Gate 1: post-brainstorm (reviewing a spec)
 
 You receive:
-- The spec file (path provided in your prompt)
-- `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`
+- The spec file (path provided in your prompt; schema: `docs-meta/SPEC_FORMAT.md` — read the spec's `weight:` frontmatter, it scopes the EARS check)
+- `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, `docs/risks.md`
+- `docs/glossary.md`, `docs/analysis/analogs.md`
 - All files under `.claude/lessons/`
 - The original user request that started the pipeline
 
@@ -38,7 +39,8 @@ Look for:
 You receive:
 - The base branch and the head branch (run `git diff base..head` to see the change)
 - The spec it was built from
-- `docs/architecture.md`, `docs/features.md`
+- The feature's living requirements file under `docs/requirements/` (when one exists — /fix runs have none)
+- `docs/architecture.md`, `docs/features.md`, `docs/risks.md`
 - All files under `.claude/lessons/`
 - **Visual evidence (if exists):** `docs/superpowers/visual-evidence/<slug>/summary.md` and the `snapshots/` text files. Do NOT open PNGs — those are for the human reviewer.
 

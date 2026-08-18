@@ -270,7 +270,7 @@ Use the description (`$ARGUMENTS`) and the confirmed interview answers to popula
 
 4. **`docs/glossary.md`** — seed one row per domain term/symbol the interview surfaced (with units where numeric). Empty is acceptable only if the interview surfaced none.
 
-5. **`docs/analysis/analogs.md`** (optional fill — D4): ask one ❓: "Заполнить анализ аналогов сейчас (web-поиск, несколько минут)?" — ➡️ recommend `yes` for internal/launch stakes, `skip` for hobby. On yes: WebSearch for existing solutions to `$ARGUMENTS`, fill 2-5 rows (what to copy / what to avoid, sources, today's date in Checked). On skip: leave the template's empty state; `/plan-improve` fills later.
+5. **`docs/analysis/analogs.md`** (optional fill — D4): ask one ❓ in the conversation's language — "Fill the analog analysis now via web search (a few minutes)?" — ➡️ recommend `yes` for internal/launch stakes, `skip` for hobby. On yes: WebSearch for existing solutions to `$ARGUMENTS`, fill 2-5 rows (what to copy / what to avoid, sources, today's date in Checked); machine-filled rows are proposals — they go through the Phase 4.5 confirmation like everything else. On skip: leave the template's empty state; `/plan-improve` fills later.
 
 Use Context7 if available to ground stack-specific advice:
 ```
@@ -290,6 +290,7 @@ Present, line by line, for confirm / edit / delete:
 1. The proposed feature list (`docs/features.md` Planned section, F-001…) — each line answerable by number: keep / rename / drop.
 2. The roadmap ordering (Now / Next / Later) — plus the "Explicitly NOT doing" entries, which must trace to the user's own negative-scope answers; machine-added entries are flagged as such.
 3. The §6 hard constraints.
+4. Machine-filled `docs/analysis/analogs.md` rows, if the optional fill ran — unconfirmed rows keep `(proposed — unconfirmed)` in their "What to copy"/"What to avoid" cells (the gate-1 critic must not treat unconfirmed rows as ground truth).
 
 Rules:
 - Wait for the user's pass over the list (no timeouts). Bulk answers are fine ("всё ок, кроме 3 и 5").

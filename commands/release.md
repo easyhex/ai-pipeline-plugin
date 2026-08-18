@@ -9,7 +9,7 @@ Releases give humans a version they can name, reference in requirements ("requir
 
 ## Phase 1: Collect
 
-1. Last release tag: `LAST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)` (empty → this is v0.1.0, skip diffing).
+1. Last release tag: `LAST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)`. **First release** (empty `LAST_TAG`): skip Phase 3 entirely and OMIT the "Requirements changed" section from the CHANGELOG — write one line instead: `Requirements baseline established (N requirements across M features).`
 2. Shipped-but-unstamped features: entries in `docs/features.md` Shipped section without an `in v` stamp.
 3. Fixes since `$LAST_TAG`: `git log $LAST_TAG..HEAD --oneline | grep -E '^\w+ fix'` (best-effort).
 
@@ -29,13 +29,16 @@ Shipped: <list>. Any BREAKING rows in requirement change histories since $LAST_T
 
 ## Phase 3: Requirements diff (by mid)
 
-For each `docs/requirements/F-*.md`, compare against `$LAST_TAG`:
+Mid matching is **global across the whole directory, never per-path** — files may have been renamed or deleted between releases and mids survive renames:
 
 ```bash
-git show "$LAST_TAG:docs/requirements/<file>" > /tmp/req-old.md 2>/dev/null || : # new file → all requirements are "added"
+# ALL files under docs/requirements/ as of the last release (rename-proof):
+git ls-tree -r --name-only "$LAST_TAG" docs/requirements/ > /tmp/req-files-old.txt
+# Old side: every mid + its block, from every old file (git show "$LAST_TAG:<path>")
+# New side: every mid + its block, from every current docs/requirements/F-*.md
 ```
 
-Match requirement blocks between old and new **by their `mid:` line** (never by FR number or title — those may have been renamed). Classify each mid: `added` / `changed` (any text in the block differs) / `removed` (status flipped to removed, or block gone). Collect into the changelog section below.
+Build two maps `{mid → block text}` and classify by set logic: mid only in new → `added`; mid in both with differing block text → `changed`; mid only in old, or present with `status: removed` → `removed`. Never match by FR number, title, or filename. Collect into the changelog section below.
 
 ## Phase 4: Write CHANGELOG.md
 

@@ -1,0 +1,3 @@
+v0.4 records playback-gate approval as a greppable `**Approved by user:** YYYY-MM-DD (weight: …)` line appended to the spec file (diagnosis file for /fix), enforced by feature.md Phase 4's pre-condition; ceremony weight lives in the spec's YAML frontmatter, and the project default in `.claude/settings.json` → `pipeline.default_weight`. These are deliberate substitutes for the run-state ledger that does not exist until v0.7 — v0.5–v0.7 work must implement against THIS mechanism, not the v0.4 spec's literal "run-state" wording.
+
+Captured by senior-critic at gate-2 of feature/v0.4-elicitation on 2026-08-18.

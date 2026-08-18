@@ -120,7 +120,7 @@ The critic saves a report and returns a one-line summary like:
 **Decision (synchronous — wait for the user's answer; there are no timeouts):**
 - Critical > 0: present the findings, ask `continue / address / override`.
   - `address` → re-run Phase 2 with critic findings as additional input. Max 2 retries; if still Critical, put the decision to the user again.
-  - `override` → user must provide a written reason; append it to the report file AND append a row to `docs/risks.md` (Open table: `R-NNN` next unused, date, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
+  - `override` → user must provide a written reason; append it to the report file AND append a `docs/risks.md` row (Open table: `R-NNN` next unused, date, Source = which gate, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
   - `continue` → proceed.
 - Important-only (Critical == 0, Important > 0): do NOT stop here — carry the Important findings, in full, into the Phase 3.5 playback digest (one consolidated stop).
 - Nice-to-have only: proceed; mention the one-line summary.
@@ -145,8 +145,13 @@ Present the decision digest and WAIT for explicit approval. This gate runs at ev
 - The original request **authorizes planning only** — it is NOT approval to build, even if it says "just do it". Approval happens here, after the user sees the digest.
 - On approval, append to the spec file: `**Approved by user:** YYYY-MM-DD (weight: <weight>)`.
 - On approval, mint the feature's ID and requirements file:
-  - `F_ID` = next unused `F-NNN` across ALL sections of `docs/features.md`.
+  - `F_ID` = next unused `F-NNN` across `docs/features.md`, `docs/requirements/` filenames, and `docs/TRACEABILITY.md` (all three — an abandoned or parallel run must never double-mint).
   - Create `docs/requirements/<F_ID>-<slug>.md` per `docs-meta/REQUIREMENTS_FORMAT.md` from the approved spec: copy FR/NFR blocks, give every requirement a `mid:` (`uuidgen | tr A-F a-f`), `status: in_progress` in the frontmatter, source lines pointing at the spec's User decisions.
+  - Commit the approval durably (also makes both files visible inside a later worktree):
+    ```bash
+    git add "docs/superpowers/specs/<SLUG>.md" "docs/requirements/<F_ID>-<slug>.md"
+    git commit -m "docs(spec): approved — <slug> (<F_ID>)"
+    ```
 - If the user amends anything: fold the amendment into the spec (updating "User decisions" verbatim), re-run critic gate-1 only if the change is material, and play back again.
 - Open `TBC` markers > 0: say so explicitly. The user may answer them now, or approve anyway — approved-with-TBC markers stay in the spec as tracked debt and open the next interview.
 - `deep` weight only: before presenting the digest, run one extra edge-case round (failure modes, boundary conditions) and fold the answers in.
@@ -240,7 +245,7 @@ Critic saves report, returns one-line summary.
 
 **Auto-write suggested memories (NEW):**
 
-Read the critic's saved report file (path returned in the summary line). Parse the section beginning with `## Memories to capture (suggested)`. For each bullet entry of the form `` - `<slug>`: <summary> — <reason> ``:
+Read the critic's saved report file (path returned in the summary line). Parse the section beginning with `## Memories to capture (suggested)`. For each bullet entry of the form `` - `<slug>`: <summary> — <reason> `` or `` - [decision] `<slug>`: <summary> — <reason> `` (both shapes get a memory; the `[decision]` shape additionally gets an ADR — see below):
 
 ```bash
 # For each suggested memory:

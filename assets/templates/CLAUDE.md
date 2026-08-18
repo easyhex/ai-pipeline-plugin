@@ -56,7 +56,7 @@ Stored in `.serena/memories/` — one markdown file per topic. Holds **stable pr
 
 - Beads (tasks)
 - Lessons (bug prevention rules)
-- Master Plan (architecture/features/roadmap)
+- Master Plan (architecture/features/roadmap/risks)
 - Context7 (external library docs)
 
 **Examples** of memory-worthy facts:

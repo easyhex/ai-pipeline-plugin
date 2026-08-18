@@ -5,10 +5,10 @@ This document describes the 9-command AI development pipeline that ships with th
 ## The 9 user-facing commands
 
 ### `/init "<app description>"`
-Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
+Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, seeds `docs/glossary.md` and installs `docs/risks.md` + `docs/analysis/analogs.md` (optional web-search fill), confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
 
 ### `/plan-improve "<change to master plan>"`
-Refine the Master Plan without writing any feature code. Loads the three plan files, may ask clarifying questions, runs the critic, writes updated plan files, commits. Use this when you realize the plan is missing something or has the wrong shape.
+Refine the Master Plan without writing any feature code. Loads the four Master Plan files (plus glossary/analogs when relevant), asks open decisions as frontier rounds, runs the critic, writes updated files with `doc_version` bumps + change-history rows, commits. Also the command that retires `docs/risks.md` rows and clears `(proposed — unconfirmed)` tags.
 
 ### `/feature "<description>"`
 Build new functionality end-to-end. Interviews the user to shared understanding (frontier rounds), runs the critic on the spec, plays the spec back for explicit sign-off at Phase 3.5 — and only then runs autonomously through plan → TDD → critic → verify → finish, stopping post-sign-off only for critic findings that need the user's decision or for failures. See "Internal phases" below.
@@ -37,7 +37,7 @@ Cut a product release: proposes the next semver from shipped-since-last-tag feat
 
 | # | Phase | What it does | Implemented by |
 |---|---|---|---|
-| 1 | ground | Reads `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
+| 1 | ground | Reads the four Master Plan files + `docs/glossary.md`, `docs/analysis/analogs.md`, relevant `docs/requirements/F-*.md`, answered questionnaires, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
 | 2 | brainstorm | Generates spec → saves to `docs/superpowers/specs/YYYY-MM-DD-<slug>.md` | `superpowers:brainstorming` |
 | 3 | critic-1 | Senior-critic reviews the spec | `senior-critic` subagent (ships with the ai-pipeline plugin) |
 | 3.5 | playback gate | The single blocking stop: decision digest (request verbatim / decisions / assumptions / out of scope / seams / open markers) → explicit user approval, recorded in the spec. On approval: F-ID minted + living requirements file created (`docs/requirements/`, per REQUIREMENTS_FORMAT.md, mid uuids). The original request authorizes planning only. | inline in command file |

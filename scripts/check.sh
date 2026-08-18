@@ -220,14 +220,19 @@ else fail "T26 Phase 4 no longer enforces the playback approval"; fi
 
 # ---- v0.5 requirements contract ----
 
-# T27 — SPEC_FORMAT.md is the single home of the spec schema + EARS grammar.
+# T27 — SPEC_FORMAT.md is the single home of the spec schema + EARS grammar:
+# all five named patterns must be present.
 if [ -f assets/templates/SPEC_FORMAT.md ] \
    && grep -q 'SHALL' assets/templates/SPEC_FORMAT.md \
-   && grep -qc 'While\|When\|Where\|If' assets/templates/SPEC_FORMAT.md >/dev/null \
+   && grep -q 'Ubiquitous' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'Event-driven' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'State-driven' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'Optional feature' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'Unwanted behaviour' assets/templates/SPEC_FORMAT.md \
    && grep -q 'SPEC_FORMAT' commands/feature.md \
    && grep -q 'EARS' agents/senior-critic.md; then
-  pass "T27 SPEC_FORMAT + EARS grammar shipped, referenced, critic-enforced"
-else fail "T27 SPEC_FORMAT/EARS missing or unenforced"; fi
+  pass "T27 SPEC_FORMAT + all five EARS patterns shipped, referenced, critic-enforced"
+else fail "T27 SPEC_FORMAT/EARS missing, incomplete, or unenforced"; fi
 
 # T28 — living requirement files: format ships, feature.md creates them with mid uuids,
 # improve.md amends them, and the [F-XXX] placeholder is gone.
@@ -239,13 +244,14 @@ if [ -f assets/templates/REQUIREMENTS_FORMAT.md ] \
   pass "T28 living requirement files with mid identity; F-XXX placeholder gone"
 else fail "T28 requirements files missing, unminted, or F-XXX placeholder survives"; fi
 
-# T29 — risk register: template ships, overrides append to it, ground+critic read it.
+# T29 — risk register: template ships, EVERY gate's override appends a row
+# (feature gate-1, gate-2 via 'same protocol', plan-improve), ground+critic read it.
 if [ -f assets/templates/risks.md ] \
-   && grep -q 'risks.md' commands/feature.md \
-   && grep -q 'risks.md' commands/plan-improve.md \
+   && [ "$(grep -c 'append a.*`docs/risks.md`\|append a `docs/risks.md` row' commands/feature.md)" -ge 2 ] \
+   && grep -q 'append a `docs/risks.md` row' commands/plan-improve.md \
    && grep -q 'risks.md' agents/senior-critic.md; then
-  pass "T29 risk register wired into overrides, ground, and critic"
-else fail "T29 accepted risk still evaporates (no risks.md wiring)"; fi
+  pass "T29 risk register wired into all overrides, ground, and critic"
+else fail "T29 an override path still bypasses docs/risks.md"; fi
 
 # T30 — /release ships: CHANGELOG, mid-diff, local tag, no push.
 if [ -f commands/release.md ] && grep -q 'CHANGELOG' commands/release.md \
@@ -272,6 +278,26 @@ if [ -f assets/templates/ADR_FORMAT.md ] \
    && grep -q 'docs/decisions/' commands/feature.md; then
   pass "T33 ADR pipeline (critic marks, orchestrator writes)"
 else fail "T33 decision rationale still uncommitted (no ADR path)"; fi
+
+# T35 — /improve defines its Phase 3.5 delta: the amend path must NOT re-mint.
+if grep -q 'Phase 3.5' commands/improve.md && grep -qi 'do NOT mint\|no new F-ID\|without minting' commands/improve.md; then
+  pass "T35 /improve amend path does not re-mint F-IDs"
+else fail "T35 /improve inherits the unconditional mint — duplicate requirements files"; fi
+
+# T36 — /release: first-release behavior defined, mid collection is global (rename-proof).
+if grep -qi 'first release' commands/release.md && grep -qi 'ls-tree\|ALL files under\|all mids' commands/release.md; then
+  pass "T36 /release handles first release + global mid-diff"
+else fail "T36 /release mid-diff is per-path or first-release undefined"; fi
+
+# T37 — mint uniqueness scans beyond features.md (requirements/ + TRACEABILITY).
+if grep -qF 'across `docs/features.md`, `docs/requirements/`' commands/feature.md; then
+  pass "T37 F-ID mint scans features.md + requirements/ + traceability"
+else fail "T37 F-ID uniqueness derived from features.md alone (double-mint risk)"; fi
+
+# T38 — the approved spec + requirements file are committed at Phase 3.5 (worktree-visible, no orphans).
+if grep -qi 'commit.*approv\|approv.*commit' commands/feature.md; then
+  pass "T38 approval is committed at Phase 3.5"
+else fail "T38 requirements file stays untracked until Phase 11"; fi
 
 # T34 — Master Plan docs are versioned: doc_version in all four templates, bumped by /plan-improve.
 if grep -q 'doc_version' assets/templates/architecture.md \
