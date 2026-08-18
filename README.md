@@ -51,7 +51,7 @@ After `/init` completes, you start building features:
 > /feature "add user signup with magic link auth"
 ```
 
-The pipeline interviews you first (frontier rounds of numbered questions with recommended answers — see `docs-meta/ELICITATION.md`), plays the spec back for your explicit sign-off, and then runs autonomously — plan, beads tasks, TDD loop with auto-commits, critic gate-2, verify, merge or PR — stopping only for Critical critic findings or failures.
+The pipeline interviews you first (frontier rounds of numbered questions with recommended answers — see `docs-meta/ELICITATION.md`), plays the spec back for your explicit sign-off, and then runs autonomously — plan, beads tasks, TDD loop with auto-commits, critic gate-2, verify, merge or PR — stopping only when the critic surfaces findings that need your decision, or on failures.
 
 ## Pipeline highlights
 

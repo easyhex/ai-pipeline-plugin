@@ -5,13 +5,13 @@ This document describes the 8-command AI development pipeline that ships with th
 ## The 8 user-facing commands
 
 ### `/init "<app description>"`
-Bootstrap a new project. Asks ~3 clarifying questions, fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, scaffolds the project skeleton, runs `git init`, runs `bd init`, makes the first commit. Refuses to run if the current folder already contains feature code.
+Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
 
 ### `/plan-improve "<change to master plan>"`
 Refine the Master Plan without writing any feature code. Loads the three plan files, may ask clarifying questions, runs the critic, writes updated plan files, commits. Use this when you realize the plan is missing something or has the wrong shape.
 
 ### `/feature "<description>"`
-Build new functionality end-to-end. Runs the full automatic pipeline (see "Internal phases" below). The user fires this and walks away — only intervenes when the brainstorm has a real clarifying question or the critic surfaces a Critical finding.
+Build new functionality end-to-end. Interviews the user to shared understanding (frontier rounds), runs the critic on the spec, plays the spec back for explicit sign-off at Phase 3.5 — and only then runs autonomously through plan → TDD → critic → verify → finish, stopping post-sign-off only for critic findings that need the user's decision or for failures. See "Internal phases" below.
 
 ### `/improve "<change to existing X>"`
 Same pipeline as `/feature`, but the ground phase emphasizes finding the existing code paths to change. Use when modifying behavior of something already shipped. **Does not** add new features (those go through `/feature`).
@@ -48,7 +48,9 @@ Generate a requirements questionnaire for someone else's head (client, domain ex
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |
 | 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped" | inline in command file |
 
-`/fix` replaces phase 2 with `superpowers:systematic-debugging`, replaces phase 11 with lesson-write.
+`/fix` replaces phase 2 with `superpowers:systematic-debugging`, runs Phase 3.5 as a light digest over its diagnosis, and replaces phase 11 with lesson-write.
+
+**Ceremony weight:** `.claude/settings.json` → `pipeline.default_weight` (`light` / `standard` / `deep`, written by `/init`'s stakes answer) seeds the ➡️ recommendation of `/feature`'s weight question; the confirmed weight is recorded in the spec frontmatter and scales the playback digest (see `docs-meta/ELICITATION.md`).
 
 ---
 

@@ -18,7 +18,7 @@ The subject of any interview is a **design tree**: decisions with decisions hang
 
 The user answers by number: "1 да, 2 второй вариант, 3 нет, потому что …". Options, where offered, are 2–5 mutually exclusive choices. After answers land, the frontier is recomputed — later rounds ask what the answers unblocked.
 
-**Opt-out:** a user who prefers sequential questioning adds one line to their project `CLAUDE.md`: `When interviewing, ask one question at a time.` Honor it.
+**Opt-out:** a user who prefers sequential questioning adds one line to their project `CLAUDE.md`: `When grilling, ask one question at a time.` (any close paraphrase — "when interviewing…" — counts). Honor it.
 
 ## Facts vs decisions
 
@@ -45,6 +45,8 @@ Before printing any question, silently check it against this lint; on any hit, r
 13. In the user's language for prose (see "Artifact language" below).
 14. Worth asking — the answer must be able to change what gets built; otherwise delete it.
 
+How rules 3 and 9 coexist: the question **body** stays neutral (no embedded expectation); the recommendation lives **only** in the ➡️ line. Rule 12's open-form questions still carry a ➡️ line — there it offers a suggested starting point, not an option to pick.
+
 ## Micro-playback
 
 A decision slot becomes **Confirmed** only after the user affirms a one-sentence paraphrase of their answer ("Т.е. допуск 1e-9 относительной ошибки против аналитического решения — верно?"). A hedged or contradictory affirmation reopens the slot with a clarification question. This catches misunderstandings twenty turns before the sign-off gate would.
@@ -59,15 +61,17 @@ The final pre-playback round **must** iterate the non-functional dimensions of t
 
 ## Coverage state file
 
-For any interview beyond a couple of rounds, keep state in `docs/superpowers/elicitation/<SLUG>-state.md`:
+For any interview beyond a couple of rounds, keep state in `docs/superpowers/elicitation/<SLUG>-state.md`. Instantiate it from a starting tree in `ELICITATION_TREES.md` (generic or numerics variant — picked by one ❓ in the first round), then prune and extend per feature:
 
 ```markdown
 # Elicitation state — <SLUG>
 
-## Aspect: <e.g. Correctness & precision>
-- [x] tolerance target — Confirmed: rel. error ≤ 1e-9 vs analytic oracle
-- [ ] conditioning behavior — Unexplored
-- [~] input validation — Rejected (out of scope, user 2026-08-18)
+## Aspect: Correctness & precision
+- Dimension: tolerances
+  - [x] tolerance target — Confirmed: rel. error ≤ 1e-9 vs analytic oracle
+  - [ ] tolerance justification — Unexplored
+- Dimension: oracles
+  - [~] reference implementation — Rejected (none exists; property tests instead, user 2026-08-18)
 
 ## Surprises
 - <entity> — <follow-up asked, outcome>
@@ -91,7 +95,7 @@ One early stakes assessment sets `weight: light | standard | deep` (recorded in 
 
 | weight | when | effect |
 |---|---|---|
-| `light` | small, low-stakes change | minimal spec; playback digest is 3 lines — **approval still required** |
+| `light` | small, low-stakes change | spec keeps all mandatory sections but entries may be single lines; playback digest is 3 lines — **approval still required** |
 | `standard` | normal feature work | full spec sections, full playback digest |
 | `deep` | high-stakes / hard-to-reverse | full digest + an extra edge-case round before playback |
 
@@ -104,3 +108,5 @@ Prose in generated artifacts (specs, requirements, reports, questionnaires) is w
 ## Termination gate
 
 An interview is not finished when the frontier empties — it is finished when the user confirms the understanding is shared. The pipeline's spec **playback gate** is that confirmation: the original request authorizes planning only, and nothing gets built until the user approves the played-back digest.
+
+**Post-approval:** a decision that surfaces after sign-off does not reopen the interview and is not decided silently either — it is recorded in the spec as an Assumption plus a `TBC:` marker, the conservative option is taken, and the gate-2 critic surfaces every post-approval assumption to the user. Exception: if the new decision invalidates the approved digest (changes scope, an interface, or a stated tolerance), STOP and re-play.

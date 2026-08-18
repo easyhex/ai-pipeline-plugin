@@ -22,6 +22,7 @@ You receive:
 
 Look for:
 - Unstated assumptions ("the spec assumes X without justification — verify")
+- Provenance audit (when the spec has "User decisions" / "Assumptions" sections): any material requirement that appears outside "User decisions" and is not listed under "Assumptions (machine, unconfirmed)" → flag as **Important** (it will be surfaced at the playback gate)
 - Missing edge cases (auth failures, empty inputs, concurrent writes, network errors, partial state)
 - Scope creep beyond the user request
 - Conflicts with the Master Plan (architecture violations, conflicts with shipped features, items not in roadmap)

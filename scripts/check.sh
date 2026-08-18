@@ -173,6 +173,51 @@ if [ -f commands/questionnaire.md ] && grep -q 'docs/requirements/' commands/que
   pass "T18 /questionnaire command + ground-phase return path"
 else fail "T18 /questionnaire missing or no return path in ground"; fi
 
+# T19 — coverage-tree templates ship (generic + numerics) and are referenced.
+if [ -f assets/templates/ELICITATION_TREES.md ] \
+   && grep -q 'ELICITATION_TREES' assets/templates/ELICITATION.md \
+   && grep -q 'ELICITATION_TREES' commands/init.md; then
+  pass "T19 coverage-tree templates ship and are referenced"
+else fail "T19 coverage-tree templates missing (spec A2)"; fi
+
+# T20 — PIPELINE.md may not contradict the playback gate: no walk-away promise,
+# no 3-question /init description.
+if grep -q 'walks away' assets/templates/PIPELINE.md || grep -q '~3 clarifying questions' assets/templates/PIPELINE.md; then
+  fail "T20 PIPELINE.md still promises walk-away autonomy / 3-question init (contradicts Phase 3.5)"
+else pass "T20 PIPELINE.md consistent with the playback gate"; fi
+
+# T21 — /fix defines its own (light) playback: diagnosis approval recorded.
+if grep -q 'Approved by user' commands/fix.md; then
+  pass "T21 /fix plays back the diagnosis and records approval"
+else fail "T21 /fix playback undefined (rule 8 claims /fix inherits the gate)"; fi
+
+# T22 — /plan-improve clears '(proposed — unconfirmed)' tags.
+if grep -q 'proposed — unconfirmed' commands/plan-improve.md; then
+  pass "T22 /plan-improve clears unconfirmed-proposal tags"
+else fail "T22 '(proposed — unconfirmed)' tags are never cleared by any command"; fi
+
+# T23 — /init's stakes answer persists: default_weight stored and read back.
+if grep -q 'default_weight' assets/templates/settings.json \
+   && grep -q 'default_weight' commands/init.md \
+   && grep -q 'default_weight' commands/feature.md; then
+  pass "T23 default ceremony weight persisted and read by /feature"
+else fail "T23 stakes answer is a dead data path (default weight stored nowhere)"; fi
+
+# T24 — post-sign-off open decisions have a defined route.
+if grep -q 'After sign-off' commands/feature.md && grep -qi 'post-approval' assets/templates/ELICITATION.md; then
+  pass "T24 post-approval decision route defined"
+else fail "T24 mid-build open decisions have no defined route (autonomy vs no-silent-decisions)"; fi
+
+# T25 — gate-1 critic audits spec provenance sections.
+if grep -q 'User decisions' agents/senior-critic.md; then
+  pass "T25 critic gate-1 provenance audit present"
+else fail "T25 provenance sections exist but no gate audits them"; fi
+
+# T26 — the Phase 4 pre-condition (the playback gate's teeth) is present verbatim.
+if grep -qF 'must contain an `**Approved by user:**` line' commands/feature.md; then
+  pass "T26 Phase 4 approval pre-condition present"
+else fail "T26 Phase 4 no longer enforces the playback approval"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"

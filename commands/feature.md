@@ -3,7 +3,7 @@ description: Build new functionality end-to-end. Interviews to shared understand
 argument-hint: "<feature description>"
 ---
 
-# /feature — build new functionality (full auto pipeline)
+# /feature — build new functionality (interview → sign-off → autonomous)
 
 **Input:** `$ARGUMENTS` (the feature description)
 
@@ -20,7 +20,7 @@ argument-hint: "<feature description>"
    - Save as `$SLUG` for use in filenames throughout
 
 3. **Announce intent:**
-   - Tell the user: "Starting /feature pipeline for: <description>. Slug: <SLUG>. I'll interview you until we share an understanding of what to build, play the spec back for your sign-off, then run autonomously through plan → TDD → critic → verify → finish. After sign-off I'll only stop for Critical critic findings or failures."
+   - Tell the user: "Starting /feature pipeline for: <description>. Slug: <SLUG>. I'll interview you until we share an understanding of what to build, play the spec back for your sign-off, then run autonomously through plan → TDD → critic → verify → finish. After sign-off I'll only stop when the critic surfaces findings that need your decision, or on failures."
 
 ---
 
@@ -31,7 +31,7 @@ Read in full:
 - `docs/features.md`
 - `docs/roadmap.md`
 - Every file under `.claude/lessons/`
-- Answered questionnaires under `docs/requirements/questionnaire-*.md` (if any) — their answers are user decisions with provenance; carry them into the spec's "User decisions" section
+- Answered questionnaires under `docs/requirements/questionnaire-*.md` (if any) — a questionnaire counts as answered when its answer stubs (`> Ответ:` / `> Answer:` lines) are non-empty; answered ones are user decisions with provenance, carry them into the spec's "User decisions" section
 
 Detect libraries from package manifests (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc.). For each detected library that is *plausibly relevant* to this feature, query Context7:
 
@@ -68,7 +68,7 @@ Invoke `superpowers:brainstorming` with:
 - Facts are your job — look them up; never ask the user what the environment can answer.
 - Every open decision goes to the user as a numbered frontier round (❓ N + ➡️ Recommended) and you WAIT. No cap on questions; the bound is by kind, not count.
 - Confirm each substantive answer with a one-sentence paraphrase before treating it as settled.
-- The first round includes the ceremony-weight question (`weight: light | standard | deep`, with a ➡️ recommendation).
+- The first round includes the ceremony-weight question (`weight: light | standard | deep`); its ➡️ recommendation is the project default from `jq -r '.pipeline.default_weight // "standard"' .claude/settings.json`, adjusted for this request's size/stakes.
 - The final pre-playback round MUST iterate non-functional dimensions explicitly (tolerances + units, performance/memory envelopes, data scale, determinism) — never rely on NFRs surfacing on their own.
 - Anything still open is written into the spec as `[NEEDS CLARIFICATION: …]` (cap 3) or `TBC:` markers — never left in chat.
 - For interviews beyond a couple of rounds, keep coverage state in `docs/superpowers/elicitation/<SLUG>-state.md`.
@@ -221,6 +221,8 @@ For each ready task:
 - 3 failed RED→GREEN attempts on a single task → stop, surface to user
 - Test that should fail doesn't fail → stop (test is broken)
 - Verification command fails → stop
+
+**After sign-off, open decisions do not stop the build:** a decision that surfaces mid-TDD is recorded in the spec as an Assumption plus a `TBC:` marker, the conservative option is taken, and gate-2 surfaces it (see `docs-meta/ELICITATION.md`, "Post-approval"). Exception: if it invalidates the approved digest (scope, interface, stated tolerance) → STOP and re-play Phase 3.5.
 
 ---
 

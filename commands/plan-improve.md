@@ -65,9 +65,13 @@ If Critical findings exist, present them to the user and offer:
 - `address` — re-draft based on critic findings
 - `override` — apply with written justification appended to the report
 
+If Important-only (no Critical): present the Important findings (content, not just the count) and ask `continue / address`. Nice-to-have only: proceed. Decisions are synchronous — wait for the answer.
+
 ## Phase 6: Apply the change
 
 Edit the affected `docs/*.md` files with the changes from Phase 4 (modified per critic if user chose `address`).
+
+While applying: remove the `(proposed — unconfirmed)` suffix from any Master Plan line the user confirms or reworks in this run — this is the command that clears the tags `/init` leaves on unreviewed machine proposals.
 
 Verify the soft size budgets are not exceeded:
 - `architecture.md` ≤ 300 lines

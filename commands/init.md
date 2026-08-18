@@ -155,7 +155,8 @@ The pipeline depends on 4 Claude Code plugins. Detect which are missing and inst
 Resolve the plugin templates directory now (same procedure as Phase 3) and read `ELICITATION.md` from it. Run the interview per that file: numbered ❓ questions with ➡️ recommended answers, whole frontier per round, answers by number; facts you can infer or look up are never questions; confirm each substantive answer with a one-sentence paraphrase.
 
 **Round 1 (always):**
-- ❓ Stakes: hobby / internal tool / production launch — with a ➡️ recommendation inferred from `$ARGUMENTS`. Sets the default ceremony weight for future runs (`light` / `standard` / `deep`).
+- ❓ Stakes: hobby / internal tool / production launch — with a ➡️ recommendation inferred from `$ARGUMENTS`. Maps to the default ceremony weight (hobby→`light`, internal→`standard`, launch→`deep`); Phase 3 writes it into `.claude/settings.json` → `pipeline.default_weight`, and `/feature`'s weight question recommends it.
+- ❓ Coverage-tree variant for future interviews: generic / numerics (see `ELICITATION_TREES.md` in the plugin templates) — ➡️ recommend from `$ARGUMENTS`.
 - ❓ Primary user of the app (who, and what they do with it).
 - ❓ Tech stack — recommend one from `$ARGUMENTS` context; free-text welcome (a math-heavy system may be NumPy/SciPy/JAX, Fortran-interop, GPU — never force a web framework).
 
@@ -210,15 +211,23 @@ cp "$TEMPLATE_DIR/features.md"        ./docs/features.md
 cp "$TEMPLATE_DIR/roadmap.md"         ./docs/roadmap.md
 cp "$TEMPLATE_DIR/PIPELINE.md"        ./docs-meta/PIPELINE.md
 cp "$TEMPLATE_DIR/LESSON_FORMAT.md"   ./docs-meta/LESSON_FORMAT.md
-cp "$TEMPLATE_DIR/ELICITATION.md"     ./docs-meta/ELICITATION.md
+cp "$TEMPLATE_DIR/ELICITATION.md"       ./docs-meta/ELICITATION.md
+cp "$TEMPLATE_DIR/ELICITATION_TREES.md" ./docs-meta/ELICITATION_TREES.md
 cp "$TEMPLATE_DIR/gitignore"          ./.gitignore       # rename: no leading dot in source
 cp "$TEMPLATE_DIR/settings.json"      ./.claude/settings.json
+```
+
+Write the interview's stakes answer into settings (default `standard` if the user skipped it):
+
+```bash
+# WEIGHT is light|standard|deep from the Round 1 stakes answer
+jq --arg w "$WEIGHT" '.pipeline.default_weight = $w' .claude/settings.json > /tmp/s.json && mv /tmp/s.json .claude/settings.json
 ```
 
 Verify all files copied:
 ```bash
 for f in CLAUDE.md docs/architecture.md docs/features.md docs/roadmap.md \
-         docs-meta/PIPELINE.md docs-meta/LESSON_FORMAT.md docs-meta/ELICITATION.md \
+         docs-meta/PIPELINE.md docs-meta/LESSON_FORMAT.md docs-meta/ELICITATION.md docs-meta/ELICITATION_TREES.md \
          .gitignore .claude/settings.json; do
   test -f "$f" && echo "  ✓ $f" || echo "  ✗ MISSING: $f"
 done
