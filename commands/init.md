@@ -150,29 +150,25 @@ The pipeline depends on 4 Claude Code plugins. Detect which are missing and inst
 
 ---
 
-## Phase 2: Clarify (3 multi-choice questions)
+## Phase 2: Interview (frontier rounds)
 
-Ask the user **exactly 3 questions** in sequence, one per message. Wait for answers.
+Resolve the plugin templates directory now (same procedure as Phase 3) and read `ELICITATION.md` from it. Run the interview per that file: numbered ❓ questions with ➡️ recommended answers, whole frontier per round, answers by number; facts you can infer or look up are never questions; confirm each substantive answer with a one-sentence paraphrase.
 
-1. **What's the primary tech stack?**
-   A) Next.js + TypeScript + Postgres
-   B) Python (FastAPI/Django/Flask)
-   C) Go
-   D) Other (let user specify in free text)
+**Round 1 (always):**
+- ❓ Stakes: hobby / internal tool / production launch — with a ➡️ recommendation inferred from `$ARGUMENTS`. Maps to the default ceremony weight (hobby→`light`, internal→`standard`, launch→`deep`); Phase 3 writes it into `.claude/settings.json` → `pipeline.default_weight`, and `/feature`'s weight question recommends it.
+- ❓ Coverage-tree variant for future interviews: generic / numerics (see `ELICITATION_TREES.md` in the plugin templates) — ➡️ recommend from `$ARGUMENTS`.
+- ❓ Primary user of the app (who, and what they do with it).
+- ❓ Tech stack — recommend one from `$ARGUMENTS` context; free-text welcome (a math-heavy system may be NumPy/SciPy/JAX, Fortran-interop, GPU — never force a web framework).
 
-2. **Who is the primary user?**
-   A) End consumer
-   B) Developer / technical user
-   C) Internal team
-   D) Other (specify)
+**Round 2 (recomputed from round 1):**
+- ❓ Top 2-3 usage scenarios, in the user's words.
+- ❓ Quality forced-ranking: rank what matters most — correctness/precision, performance, reproducibility, security/compliance, speed to ship, maintainability. (Correctness and reproducibility are ALWAYS offered as options.)
+- ❓ Negative scope: what this app is explicitly NOT — in the user's words, not invented.
 
-3. **What's the single most important quality constraint?**
-   A) Speed to ship
-   B) Security / compliance
-   C) Performance
-   D) Maintainability
+**Round 3 (forced NFR round — never skip):**
+- Iterate non-functional dimensions explicitly: precision/tolerance targets (with units, and against what oracle), data scale, performance/memory envelopes, determinism/reproducibility needs, compliance constraints. "Not applicable" is an acceptable answer; not asking is not.
 
-Capture the 3 answers as `STACK_ANSWER`, `USER_ANSWER`, `QUALITY_ANSWER` for use in Phase 4.
+Capture all confirmed answers for Phase 4. Anything the user leaves open becomes a `TBC:` marker in the drafted docs — never silently decided.
 
 ---
 
@@ -207,7 +203,7 @@ If the templates directory cannot be found, STOP with the error message above.
 Then create cwd subdirectories and copy templates:
 
 ```bash
-mkdir -p .claude/lessons docs/superpowers/specs docs/superpowers/plans docs/superpowers/critic-reports docs-meta .claude
+mkdir -p .claude/lessons docs/superpowers/specs docs/superpowers/plans docs/superpowers/critic-reports docs/superpowers/elicitation docs/requirements docs-meta .claude
 
 cp "$TEMPLATE_DIR/CLAUDE.md"          ./CLAUDE.md
 cp "$TEMPLATE_DIR/architecture.md"    ./docs/architecture.md
@@ -215,14 +211,23 @@ cp "$TEMPLATE_DIR/features.md"        ./docs/features.md
 cp "$TEMPLATE_DIR/roadmap.md"         ./docs/roadmap.md
 cp "$TEMPLATE_DIR/PIPELINE.md"        ./docs-meta/PIPELINE.md
 cp "$TEMPLATE_DIR/LESSON_FORMAT.md"   ./docs-meta/LESSON_FORMAT.md
+cp "$TEMPLATE_DIR/ELICITATION.md"       ./docs-meta/ELICITATION.md
+cp "$TEMPLATE_DIR/ELICITATION_TREES.md" ./docs-meta/ELICITATION_TREES.md
 cp "$TEMPLATE_DIR/gitignore"          ./.gitignore       # rename: no leading dot in source
 cp "$TEMPLATE_DIR/settings.json"      ./.claude/settings.json
+```
+
+Write the interview's stakes answer into settings (default `standard` if the user skipped it):
+
+```bash
+# WEIGHT is light|standard|deep from the Round 1 stakes answer
+jq --arg w "$WEIGHT" '.pipeline.default_weight = $w' .claude/settings.json > /tmp/s.json && mv /tmp/s.json .claude/settings.json
 ```
 
 Verify all files copied:
 ```bash
 for f in CLAUDE.md docs/architecture.md docs/features.md docs/roadmap.md \
-         docs-meta/PIPELINE.md docs-meta/LESSON_FORMAT.md \
+         docs-meta/PIPELINE.md docs-meta/LESSON_FORMAT.md docs-meta/ELICITATION.md docs-meta/ELICITATION_TREES.md \
          .gitignore .claude/settings.json; do
   test -f "$f" && echo "  ✓ $f" || echo "  ✗ MISSING: $f"
 done
@@ -234,15 +239,15 @@ If any are missing, STOP — something went wrong with the template copy.
 
 ## Phase 4: Fill placeholders in Master Plan files
 
-Use the description (`$ARGUMENTS`) and the 3 answers to populate the templates.
+Use the description (`$ARGUMENTS`) and the confirmed interview answers to populate the templates. Prose in the conversation's language; IDs, statuses, and markers always English (see `docs-meta/ELICITATION.md`).
 
 1. **`docs/architecture.md`** — replace the `UNFILLED` status sentinel and fill sections 1-6:
-   - §1 What this app is — one paragraph derived from `$ARGUMENTS` and `USER_ANSWER`
-   - §2 Tech stack — fill the table based on `STACK_ANSWER` (use Context7 to verify version recommendations if available; if not, skip with note)
+   - §1 What this app is — one paragraph derived from `$ARGUMENTS` and the confirmed primary-user + scenario answers
+   - §2 Tech stack — fill the table from the confirmed stack answer (use Context7 to verify version recommendations if available; if not, skip with note)
    - §3 Key modules / boundaries — propose 3-7 modules typical for the chosen stack
    - §4 Data flow — 2-5 sentences
    - §5 External services — list any obvious ones (auth, payments, etc.) or "none yet"
-   - §6 Hard architectural constraints — derived from `QUALITY_ANSWER`
+   - §6 Hard architectural constraints — from the quality forced-ranking and the forced NFR round: write the MEASURABLE ones (tolerances with units, performance/memory envelopes, determinism requirements). Anything the user left open → a `TBC:` marker, never an invented constraint
 
 2. **`docs/features.md`** — under "Planned", list 5-8 initial features with IDs `F-001` through `F-008`. Each line:
    ```
@@ -262,6 +267,22 @@ mcp__plugin_context7-plugin_context7__query-docs { id: "<resolved>", topic: "bes
 ```
 
 If Context7 lookup fails, continue without it.
+
+---
+
+## Phase 4.5: Confirm the drafted plan (BEFORE the first commit)
+
+Everything Phase 4 drafted beyond the user's confirmed answers is a machine proposal — it must be reviewed BEFORE it becomes ground truth for every future gate.
+
+Present, line by line, for confirm / edit / delete:
+1. The proposed feature list (`docs/features.md` Planned section, F-001…) — each line answerable by number: keep / rename / drop.
+2. The roadmap ordering (Now / Next / Later) — plus the "Explicitly NOT doing" entries, which must trace to the user's own negative-scope answers; machine-added entries are flagged as such.
+3. The §6 hard constraints.
+
+Rules:
+- Wait for the user's pass over the list (no timeouts). Bulk answers are fine ("всё ок, кроме 3 и 5").
+- Any line the user does not explicitly confirm keeps the suffix `(proposed — unconfirmed)` in the file. `/plan-improve` clears the tag when the item is later confirmed or reworked.
+- Apply edits, then proceed to Phase 5.
 
 ---
 
@@ -293,8 +314,8 @@ git add -A
 git commit -m "chore: scaffold via /init
 
 App: $ARGUMENTS
-Stack: <STACK_ANSWER>
-Pipeline: ai-pipeline plugin (7-command AI development pipeline with visual-verify gate)
+Stack: <confirmed stack answer>
+Pipeline: ai-pipeline plugin (see docs-meta/PIPELINE.md)
 Generated by: /init"
 ```
 
@@ -316,7 +337,7 @@ Wrote:
   - docs/architecture.md (filled)
   - docs/features.md (8 planned features)
   - docs/roadmap.md (3-now, 3-next, 2-later)
-  - docs-meta/PIPELINE.md, docs-meta/LESSON_FORMAT.md
+  - docs-meta/PIPELINE.md, docs-meta/LESSON_FORMAT.md, docs-meta/ELICITATION.md
   - .claude/settings.json (ai-pipeline plugin enabled)
   - .claude/lessons/, docs/superpowers/{specs,plans,critic-reports}/
 
@@ -345,7 +366,8 @@ Next steps:
 | Plugin templates directory not found | STOP — reinstall instructions |
 | Context7 lookup fails | Continue without Context7 grounding, note in architecture.md |
 | `git init` fails (existing repo) | Skip init, still commit |
-| User declines to answer Phase 2 questions | Stop — /init requires all 3 answers |
+| User declines the Phase 2 interview | Stop — /init cannot invent a plan the user never confirmed |
+| User skips lines in Phase 4.5 confirmation | Keep `(proposed — unconfirmed)` tags on skipped lines, continue |
 
 ## Constraints
 

@@ -7,7 +7,7 @@ argument-hint: "<change to existing behavior>"
 
 **Input:** `$ARGUMENTS` (description of the behavior change)
 
-This command runs the **same 11-phase pipeline as `/feature`** with two differences:
+This command runs the **same pipeline as `/feature`** (all phases, including the Phase 3.5 playback gate) with two differences:
 
 1. **Phase 1 (ground)** emphasizes locating existing code paths to change (uses Grep + Read against current src/) and explicitly identifies the shipped feature(s) being modified by referencing `docs/features.md` Shipped section.
 
@@ -33,7 +33,7 @@ This command runs the **same 11-phase pipeline as `/feature`** with two differen
 
 In addition to the standard ground:
 - Read `docs/features.md` Shipped section in full.
-- Identify which shipped feature(s) this change targets. If unclear, ask the user one question.
+- Identify which shipped feature(s) this change targets. If unclear, ask as a numbered question with a ➡️ recommended answer (per `docs-meta/ELICITATION.md`).
 - Run `Grep` for keywords from `$ARGUMENTS` across `src/` (or equivalent source dir) to locate the affected code paths.
 - List the specific files that will be touched. If the list is empty, STOP and tell the user: "I can't locate existing code matching this description. Either the feature isn't shipped, or rephrase the request."
 

@@ -30,11 +30,11 @@ The user request maps to one or more of these change types:
 - **D** — deprecating a shipped feature
 - **E** — adding/removing a hard constraint
 
-Identify which type(s). If unclear, ask the user **one** clarifying question.
+Identify which type(s). If unclear, put the question to the user in the frontier-round format (❓ + ➡️ recommended answer).
 
-## Phase 3: Clarifying questions (if needed)
+## Phase 3: Clarification round (per docs-meta/ELICITATION.md)
 
-If the request is ambiguous, ask up to 3 questions — but only if you genuinely cannot proceed without an answer. Skip if request is clear.
+Facts you can look up (current plan files, git history, code) are your job — never questions. Every open DECISION goes to the user as one numbered frontier round with recommended answers, and you wait. There is no question cap; the bound is by kind — decisions only. Skip the round only when no decisions are open.
 
 ## Phase 4: Draft the change
 
@@ -65,9 +65,13 @@ If Critical findings exist, present them to the user and offer:
 - `address` — re-draft based on critic findings
 - `override` — apply with written justification appended to the report
 
+If Important-only (no Critical): present the Important findings (content, not just the count) and ask `continue / address`. Nice-to-have only: proceed. Decisions are synchronous — wait for the answer.
+
 ## Phase 6: Apply the change
 
 Edit the affected `docs/*.md` files with the changes from Phase 4 (modified per critic if user chose `address`).
+
+While applying: remove the `(proposed — unconfirmed)` suffix from any Master Plan line the user confirms or reworks in this run — this is the command that clears the tags `/init` leaves on unreviewed machine proposals.
 
 Verify the soft size budgets are not exceeded:
 - `architecture.md` ≤ 300 lines

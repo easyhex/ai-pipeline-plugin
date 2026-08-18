@@ -1,17 +1,17 @@
 # Pipeline reference
 
-This document describes the 7-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 8-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 7 user-facing commands
+## The 8 user-facing commands
 
 ### `/init "<app description>"`
-Bootstrap a new project. Asks ~3 clarifying questions, fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, scaffolds the project skeleton, runs `git init`, runs `bd init`, makes the first commit. Refuses to run if the current folder already contains feature code.
+Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
 
 ### `/plan-improve "<change to master plan>"`
 Refine the Master Plan without writing any feature code. Loads the three plan files, may ask clarifying questions, runs the critic, writes updated plan files, commits. Use this when you realize the plan is missing something or has the wrong shape.
 
 ### `/feature "<description>"`
-Build new functionality end-to-end. Runs the full automatic pipeline (see "Internal phases" below). The user fires this and walks away — only intervenes when the brainstorm has a real clarifying question or the critic surfaces a Critical finding.
+Build new functionality end-to-end. Interviews the user to shared understanding (frontier rounds), runs the critic on the spec, plays the spec back for explicit sign-off at Phase 3.5 — and only then runs autonomously through plan → TDD → critic → verify → finish, stopping post-sign-off only for critic findings that need the user's decision or for failures. See "Internal phases" below.
 
 ### `/improve "<change to existing X>"`
 Same pipeline as `/feature`, but the ground phase emphasizes finding the existing code paths to change. Use when modifying behavior of something already shipped. **Does not** add new features (those go through `/feature`).
@@ -25,6 +25,9 @@ Manually record a lesson learned. Prompts for trigger / symptom / root_cause / p
 ### `/remember "<fact>"`
 Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__serena__write_memory`. Used rarely — most memories come automatically from senior-critic at gate-2.
 
+### `/questionnaire "<topic>"`
+Generate a requirements questionnaire for someone else's head (client, domain expert, stakeholder). Interviews you only about the send — who it goes to and what must come back — then writes a fill-in Markdown document to `docs/requirements/`. Answered questionnaires are read by the next `/feature`/`/improve` ground phase; answers become "User decisions" with provenance.
+
 ---
 
 ## Internal phases (run automatically inside `/feature`, `/improve`, `/fix`)
@@ -34,7 +37,8 @@ Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__ser
 | 1 | ground | Reads `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
 | 2 | brainstorm | Generates spec → saves to `docs/superpowers/specs/YYYY-MM-DD-<slug>.md` | `superpowers:brainstorming` |
 | 3 | critic-1 | Senior-critic reviews the spec | `senior-critic` subagent (ships with the ai-pipeline plugin) |
-| 4 | plan | Decomposes into 2-5 min tasks | `superpowers:writing-plans` |
+| 3.5 | playback gate | The single blocking stop: decision digest (request verbatim / decisions / assumptions / out of scope / seams / open markers) → explicit user approval, recorded in the spec. The original request authorizes planning only. | inline in command file |
+| 4 | plan | Decomposes into 2-5 min tasks (pre-condition: spec carries `**Approved by user:**`) | `superpowers:writing-plans` |
 | 5 | bd-tasks | Creates beads tasks + dependencies | `bd create`, `bd dep add` |
 | 6 | worktree (conditional) | Isolates work in a worktree if >3 sub-tasks | `superpowers:using-git-worktrees` |
 | 7 | TDD loop | RED → verify-fail → GREEN → verify-pass → REFACTOR → `git commit` per task | `superpowers:test-driven-development` |
@@ -44,7 +48,9 @@ Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__ser
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |
 | 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped" | inline in command file |
 
-`/fix` replaces phase 2 with `superpowers:systematic-debugging`, replaces phase 11 with lesson-write.
+`/fix` replaces phase 2 with `superpowers:systematic-debugging`, runs Phase 3.5 as a light digest over its diagnosis, and replaces phase 11 with lesson-write.
+
+**Ceremony weight:** `.claude/settings.json` → `pipeline.default_weight` (`light` / `standard` / `deep`, written by `/init`'s stakes answer) seeds the ➡️ recommendation of `/feature`'s weight question; the confirmed weight is recorded in the spec frontmatter and scales the playback digest (see `docs-meta/ELICITATION.md`).
 
 ---
 
@@ -66,7 +72,7 @@ docs/superpowers/critic-reports/YYYY-MM-DD-<slug>-gate{1,2}.md
 | `address` | Re-run prior phase with critic findings as additional input. **Gate 1 → re-runs brainstorm. Gate 2 → re-runs plan to create new tasks for each Critical/Important, then loops back to TDD for those tasks.** |
 | `override` | User accepts the risk; must leave a written reason that gets appended to the report file |
 
-**Default if user doesn't respond:** `address` if any Critical findings, `continue` if only Nice-to-have.
+**Gate decisions are synchronous** — the pipeline waits for an answer; there are no timeouts and no self-decided defaults. Outcome mapping: Critical → stop and ask; **Important-only** at gate-1 → findings are carried, in full, into the Phase 3.5 playback digest (one consolidated stop); **Important-only** at gate-2 → present the findings and ask `continue / address`; Nice-to-have only → proceed.
 
 ---
 

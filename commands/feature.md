@@ -1,9 +1,9 @@
 ---
-description: Build new functionality end-to-end. Full automatic pipeline (ground → brainstorm → critic → plan → TDD → critic → verify → finish). User intervenes only on real clarifying questions or Critical critic findings.
+description: Build new functionality end-to-end. Interviews to shared understanding (frontier rounds per docs-meta/ELICITATION.md), critic-reviewed spec, explicit playback sign-off — then autonomous plan → TDD → critic → verify → finish.
 argument-hint: "<feature description>"
 ---
 
-# /feature — build new functionality (full auto pipeline)
+# /feature — build new functionality (interview → sign-off → autonomous)
 
 **Input:** `$ARGUMENTS` (the feature description)
 
@@ -20,7 +20,7 @@ argument-hint: "<feature description>"
    - Save as `$SLUG` for use in filenames throughout
 
 3. **Announce intent:**
-   - Tell the user: "Starting /feature pipeline for: <description>. Slug: <SLUG>. I'll proceed automatically through 11 phases. I'll only stop for real clarifying questions or Critical critic findings."
+   - Tell the user: "Starting /feature pipeline for: <description>. Slug: <SLUG>. I'll interview you until we share an understanding of what to build, play the spec back for your sign-off, then run autonomously through plan → TDD → critic → verify → finish. After sign-off I'll only stop when the critic surfaces findings that need your decision, or on failures."
 
 ---
 
@@ -31,6 +31,7 @@ Read in full:
 - `docs/features.md`
 - `docs/roadmap.md`
 - Every file under `.claude/lessons/`
+- Answered questionnaires under `docs/requirements/questionnaire-*.md` (if any) — a questionnaire counts as answered when its answer stubs (`> Ответ:` / `> Answer:` lines) are non-empty; answered ones are user decisions with provenance, carry them into the spec's "User decisions" section
 
 Detect libraries from package manifests (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc.). For each detected library that is *plausibly relevant* to this feature, query Context7:
 
@@ -56,15 +57,43 @@ Produce a 5-10 bullet **ground summary** (internal — not shown to user unless 
 
 ---
 
-## Phase 2: Brainstorm
+## Phase 2: Interview + brainstorm
 
 Invoke `superpowers:brainstorming` with:
 - The user's feature description
 - The ground summary as context
 
-The brainstorming skill produces a spec. Save it to:
+**Elicitation contract** (canonical: `docs-meta/ELICITATION.md` — follow it, do not improvise a different interview):
+
+- Facts are your job — look them up; never ask the user what the environment can answer.
+- Every open decision goes to the user as a numbered frontier round (❓ N + ➡️ Recommended) and you WAIT. No cap on questions; the bound is by kind, not count.
+- Confirm each substantive answer with a one-sentence paraphrase before treating it as settled.
+- The first round includes the ceremony-weight question (`weight: light | standard | deep`); its ➡️ recommendation is the project default from `jq -r '.pipeline.default_weight // "standard"' .claude/settings.json`, adjusted for this request's size/stakes.
+- The final pre-playback round MUST iterate non-functional dimensions explicitly (tolerances + units, performance/memory envelopes, data scale, determinism) — never rely on NFRs surfacing on their own.
+- Anything still open is written into the spec as `[NEEDS CLARIFICATION: …]` (cap 3) or `TBC:` markers — never left in chat.
+- For interviews beyond a couple of rounds, keep coverage state in `docs/superpowers/elicitation/<SLUG>-state.md`.
+
+**Brainstorming-gate mapping:** the user approval `superpowers:brainstorming` requires before implementation is delivered by THIS pipeline at Phase 3.5 — one consolidated stop. Creating the spec file is NOT approval; brainstorming's per-section approvals are also consolidated into Phase 3.5.
+
+The output is a spec. Save it to:
 ```
 docs/superpowers/specs/<SLUG>.md
+```
+
+**Mandatory spec shape** (add any part the brainstorm output lacks; prose in the conversation's language, IDs/statuses/markers always English):
+
+```markdown
+---
+weight: light | standard | deep
+---
+## User decisions (verbatim)
+<numbered, quoted from the interview and answered questionnaires — requirements with provenance>
+
+## Assumptions (machine, unconfirmed)
+<every material choice the user did not state — each becomes a playback-digest line>
+
+## Out of scope (confirmed)
+<what was explicitly refused>
 ```
 
 **Frontend hint (NEW):** If the project has a frontend (`package.json` deps include `react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro`, OR a root `index.html` exists alongside `package.json`), the spec MUST include a section:
@@ -76,8 +105,6 @@ docs/superpowers/specs/<SLUG>.md
 ```
 
 If the brainstorm output omits this section for a frontend project, add it with at least `- /`. The visual sub-step in Phase 9 will navigate to each path.
-
-If the brainstorm has a real clarifying question (not stylistic), ask the user. Wait for answer. Otherwise proceed silently.
 
 ---
 
@@ -99,16 +126,42 @@ Gate: 1
 The critic saves a report and returns a one-line summary like:
 `critic gate 1: 0 Critical / 2 Important / 1 Nice-to-have. Report: docs/superpowers/critic-reports/<SLUG>-gate1.md`
 
-**Decision:**
-- If Critical > 0: present summary to user, ask `continue / address / override`. Default to `address` if user does nothing within 1 message exchange.
-  - `address` → re-run Phase 2 with critic findings as additional input. Max 2 retries; if still Critical, force user decision.
+**Decision (synchronous — wait for the user's answer; there are no timeouts):**
+- Critical > 0: present the findings, ask `continue / address / override`.
+  - `address` → re-run Phase 2 with critic findings as additional input. Max 2 retries; if still Critical, put the decision to the user again.
   - `override` → user must provide a written reason; append to the report file.
   - `continue` → proceed.
-- If Critical == 0: proceed silently. Mention only the one-line summary.
+- Important-only (Critical == 0, Important > 0): do NOT stop here — carry the Important findings, in full, into the Phase 3.5 playback digest (one consolidated stop).
+- Nice-to-have only: proceed; mention the one-line summary.
+
+---
+
+## Phase 3.5: Playback gate (the single blocking stop)
+
+Present the decision digest and WAIT for explicit approval. This gate runs at every weight — only the digest size changes.
+
+**standard / deep — full digest:**
+- (a) your request, verbatim;
+- (b) decisions made (from confirmed interview answers — the spec's "User decisions");
+- (c) assumptions I made that you never stated (the spec's "Assumptions" + every critic gate-1 finding that names an unstated assumption, any severity, + all Important findings carried from Phase 3);
+- (d) out of scope;
+- (e) seams — the invariants, tolerances, and tests that will prove the work;
+- (f) open markers: N × `[NEEDS CLARIFICATION]`, M × `TBC`.
+
+**light — 3-line digest:** what I'll build / assumptions / what will prove it. Explicit approval still required.
+
+**Rules:**
+- The original request **authorizes planning only** — it is NOT approval to build, even if it says "just do it". Approval happens here, after the user sees the digest.
+- On approval, append to the spec file: `**Approved by user:** YYYY-MM-DD (weight: <weight>)`.
+- If the user amends anything: fold the amendment into the spec (updating "User decisions" verbatim), re-run critic gate-1 only if the change is material, and play back again.
+- Open `TBC` markers > 0: say so explicitly. The user may answer them now, or approve anyway — approved-with-TBC markers stay in the spec as tracked debt and open the next interview.
+- `deep` weight only: before presenting the digest, run one extra edge-case round (failure modes, boundary conditions) and fold the answers in.
 
 ---
 
 ## Phase 4: Plan
+
+**Pre-condition:** the spec file must contain an `**Approved by user:**` line (written by Phase 3.5). If absent → STOP: the playback gate was skipped; return to Phase 3.5.
 
 Invoke `superpowers:writing-plans` on the spec at `docs/superpowers/specs/<SLUG>.md`. Save the plan to:
 ```
@@ -169,6 +222,8 @@ For each ready task:
 - Test that should fail doesn't fail → stop (test is broken)
 - Verification command fails → stop
 
+**After sign-off, open decisions do not stop the build:** a decision that surfaces mid-TDD is recorded in the spec as an Assumption plus a `TBC:` marker, the conservative option is taken, and gate-2 surfaces it (see `docs-meta/ELICITATION.md`, "Post-approval"). Exception: if it invalidates the approved digest (scope, interface, stated tolerance) → STOP and re-play Phase 3.5.
+
 ---
 
 ## Phase 8: Critic gate-2
@@ -206,12 +261,13 @@ If `mcp__serena__write_memory` fails (Serena MCP not running), warn once with th
 
 Print a one-line summary: `Memories captured: <N> new, <M> updated, <P> skipped`.
 
-**Decision:**
-- If Critical > 0: present to user, ask `continue / address / override`. Default `address`.
+**Decision (synchronous — wait for the user's answer; there are no timeouts):**
+- Critical > 0: present the findings, ask `continue / address / override`.
   - `address` → for each Critical/Important finding, run `bd create` to add a new task, then loop back to Phase 7 for those tasks. Max 2 cycles.
   - `override` → require written reason in report.
   - `continue` → proceed.
-- If Critical == 0: proceed.
+- Important-only: present the Important findings (content, not just the count) and ask `continue / address`.
+- Nice-to-have only: proceed.
 
 ---
 
@@ -508,7 +564,8 @@ Next: /feature "<next thing>" or git push (manual).
 | Failure | Action |
 |---|---|
 | Master Plan unfilled | Stop, suggest `/init` |
-| Brainstorm clarifying question | Surface to user, wait |
+| Interview decision open | Put it to the user as a frontier round, wait (no timeouts) |
+| Playback gate not approved | Fold amendments into the spec, play back again; nothing is built without approval |
 | Critic gate-1 Critical, user `address` | Re-run brainstorm with findings; max 2 retries |
 | Critic gate-2 Critical, user `address` | Add tasks, re-loop TDD; max 2 cycles |
 | TDD attempt loop > 3 | Stop, surface |

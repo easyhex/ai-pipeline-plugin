@@ -114,6 +114,110 @@ if [ "$N" = "1" ] && grep -q 'browser_navigate' commands/feature.md; then
   pass "T9 visual-verify MCP block lives only in feature.md"
 else fail "T9 visual-verify MCP block duplicated or missing (found in $N command files)"; fi
 
+# ---- v0.4 elicitation contract ----
+
+# T10 — ELICITATION.md is the single source of the interview technique: it exists,
+# every elicitation-running command references it, and its "Question hygiene"
+# section is never duplicated into a command file.
+if [ -f assets/templates/ELICITATION.md ] \
+   && grep -q 'ELICITATION.md' commands/feature.md \
+   && grep -q 'ELICITATION.md' commands/init.md \
+   && grep -q 'ELICITATION.md' commands/plan-improve.md \
+   && grep -q 'ELICITATION.md' commands/questionnaire.md \
+   && [ "$(grep -rl 'Question hygiene' commands/ assets/ 2>/dev/null | wc -l | tr -d ' ')" = "1" ]; then
+  pass "T10 ELICITATION.md canonical and referenced by all four commands"
+else fail "T10 elicitation primitive missing, unreferenced, or duplicated"; fi
+
+# T11 — the anti-elicitation reflex is gone.
+if grep -rqi 'proceed silently' commands/; then
+  fail "T11 'proceed silently' still present in a command file"
+else pass "T11 no 'proceed silently' in commands"; fi
+
+# T12 — playback gate exists, declares the planning-boundary rule, records approval.
+if grep -q 'Phase 3.5' commands/feature.md && grep -q 'authorizes planning only' commands/feature.md \
+   && grep -q 'Approved by user' commands/feature.md; then
+  pass "T12 playback gate with planning-boundary and approval record"
+else fail "T12 playback gate missing planning-boundary or approval record"; fi
+
+# T13 — spec provenance sections are mandated.
+if grep -q 'User decisions (verbatim)' commands/feature.md \
+   && grep -q 'Assumptions (machine, unconfirmed)' commands/feature.md \
+   && grep -q 'Out of scope (confirmed)' commands/feature.md; then
+  pass "T13 provenance sections mandated in the spec contract"
+else fail "T13 spec provenance sections not mandated"; fi
+
+# T14 — the unimplementable reply-timeout is gone; gate decisions are synchronous.
+if grep -rq '1 message exchange' commands/ assets/ 2>/dev/null; then
+  fail "T14 fictitious reply-timeout still present"
+else pass "T14 no fictitious gate timeout"; fi
+
+# T15 — Important-only critic outcome has defined behavior at both gates.
+if grep -q 'Important-only' commands/feature.md && grep -q 'Important-only' assets/templates/PIPELINE.md; then
+  pass "T15 Important-only gate outcome defined"
+else fail "T15 Important-only critic outcome undefined"; fi
+
+# T16 — /init confirms machine-drafted plans line-by-line before committing.
+if grep -q 'proposed — unconfirmed' commands/init.md && grep -q 'BEFORE the first commit' commands/init.md; then
+  pass "T16 /init line-by-line confirmation gate present"
+else fail "T16 /init still commits machine-invented plans unreviewed"; fi
+
+# T17 — ceremony weight exists and is recorded in the spec frontmatter.
+if grep -qE 'weight: (light \| standard \| deep|light\|standard\|deep)' commands/feature.md \
+   && grep -q 'weight' assets/templates/ELICITATION.md 2>/dev/null; then
+  pass "T17 ceremony weight defined and recorded in spec"
+else fail "T17 ceremony weight missing"; fi
+
+# T18 — /questionnaire ships, writes to docs/requirements/, and ground reads answers back.
+if [ -f commands/questionnaire.md ] && grep -q 'docs/requirements/' commands/questionnaire.md \
+   && grep -q 'questionnaire' commands/feature.md; then
+  pass "T18 /questionnaire command + ground-phase return path"
+else fail "T18 /questionnaire missing or no return path in ground"; fi
+
+# T19 — coverage-tree templates ship (generic + numerics) and are referenced.
+if [ -f assets/templates/ELICITATION_TREES.md ] \
+   && grep -q 'ELICITATION_TREES' assets/templates/ELICITATION.md \
+   && grep -q 'ELICITATION_TREES' commands/init.md; then
+  pass "T19 coverage-tree templates ship and are referenced"
+else fail "T19 coverage-tree templates missing (spec A2)"; fi
+
+# T20 — PIPELINE.md may not contradict the playback gate: no walk-away promise,
+# no 3-question /init description.
+if grep -q 'walks away' assets/templates/PIPELINE.md || grep -q '~3 clarifying questions' assets/templates/PIPELINE.md; then
+  fail "T20 PIPELINE.md still promises walk-away autonomy / 3-question init (contradicts Phase 3.5)"
+else pass "T20 PIPELINE.md consistent with the playback gate"; fi
+
+# T21 — /fix defines its own (light) playback: diagnosis approval recorded.
+if grep -q 'Approved by user' commands/fix.md; then
+  pass "T21 /fix plays back the diagnosis and records approval"
+else fail "T21 /fix playback undefined (rule 8 claims /fix inherits the gate)"; fi
+
+# T22 — /plan-improve clears '(proposed — unconfirmed)' tags.
+if grep -q 'proposed — unconfirmed' commands/plan-improve.md; then
+  pass "T22 /plan-improve clears unconfirmed-proposal tags"
+else fail "T22 '(proposed — unconfirmed)' tags are never cleared by any command"; fi
+
+# T23 — /init's stakes answer persists: default_weight stored and read back.
+if grep -q 'default_weight' assets/templates/settings.json \
+   && grep -q 'default_weight' commands/init.md \
+   && grep -q 'default_weight' commands/feature.md; then
+  pass "T23 default ceremony weight persisted and read by /feature"
+else fail "T23 stakes answer is a dead data path (default weight stored nowhere)"; fi
+
+# T24 — post-sign-off open decisions have a defined route.
+if grep -q 'After sign-off' commands/feature.md && grep -qi 'post-approval' assets/templates/ELICITATION.md; then
+  pass "T24 post-approval decision route defined"
+else fail "T24 mid-build open decisions have no defined route (autonomy vs no-silent-decisions)"; fi
+
+# T25 — gate-1 critic audits spec provenance sections.
+if grep -q 'User decisions' agents/senior-critic.md; then
+  pass "T25 critic gate-1 provenance audit present"
+else fail "T25 provenance sections exist but no gate audits them"; fi
+
+# T26 — the Phase 4 pre-condition (the playback gate's teeth) is present verbatim.
+if grep -qF 'must contain an `**Approved by user:**` line' commands/feature.md; then
+  pass "T26 Phase 4 approval pre-condition present"
+else fail "T26 Phase 4 no longer enforces the playback approval"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"

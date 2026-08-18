@@ -55,6 +55,12 @@ If Critical findings on the diagnosis: address (re-debug) before fixing.
 
 ---
 
+## Phase 3.5: Playback gate (light, inherited from /feature)
+
+Before any fixing: play back a **light digest** (3 lines) — root cause / planned fix / the test that will prove it — plus any critic gate-1 findings on the diagnosis. Wait for explicit approval (synchronous, no timeouts). On approval, append to the diagnosis file: `**Approved by user:** YYYY-MM-DD`. Phase 4 must not run without this line.
+
+---
+
 ## Phase 4: Plan + bd-tasks (small)
 
 For most bugs, the plan is 1-3 tasks:
