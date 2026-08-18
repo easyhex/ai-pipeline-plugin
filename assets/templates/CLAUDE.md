@@ -1,6 +1,6 @@
 # Pipeline rules
 
-This project uses an 8-command AI development pipeline.
+This project uses a 9-command AI development pipeline.
 Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICITATION.md`.
 
 ## User-facing commands (the only commands you should ever ask the user to run)
@@ -15,6 +15,7 @@ Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICIT
 | `/lesson` | Manually record a lesson (rare) |
 | `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
 | `/questionnaire "<topic>"` | Generate a fill-in requirements questionnaire for a client/expert (knowledge in someone else's head) |
+| `/release` | Cut a product release: semver + human CHANGELOG + requirements diff + local tag |
 
 **Never expose internal phases** (`/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, `/finish`) to the user as commands. They run automatically inside `/feature`, `/improve`, `/fix`.
 
@@ -29,16 +30,18 @@ Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICIT
 7. **Before starting `/feature` or `/improve`:** list `.serena/memories/` and read any memory whose name matches the work's topic or affected files. Cite the memory name when applying its content.
 8. **Elicitation follows `docs-meta/ELICITATION.md`.** Facts are looked up, never asked; decisions go to the user as numbered frontier rounds with ➡️ recommended answers, and the pipeline waits. The spec playback gate (Phase 3.5) requires explicit user approval before any plan or code — the original request authorizes planning only. Ceremony weight: `.claude/settings.json` → `pipeline.default_weight` (light/standard/deep, written by `/init`) seeds the weight recommendation; the confirmed weight lives in the spec frontmatter.
 9. **Artifact language:** prose in the conversation's language; IDs (`F-001`), statuses, filenames, and greppable markers (`[NEEDS CLARIFICATION]`, `TBC:`, `TBD:`) always English, never localized.
+10. **Requirements are living files.** `docs/requirements/F-NNN-<slug>.md` per `docs-meta/REQUIREMENTS_FORMAT.md`: created at spec approval, amended by `/improve` (update-vs-new rubric), `mid:` uuids written once and never edited. Acceptance criteria follow EARS (`docs-meta/SPEC_FORMAT.md`) — mandatory at weight standard/deep. Every gate `override` appends a `docs/risks.md` row; `/feature` and `/improve` append a `docs/TRACEABILITY.md` row on ship.
 
 ## Master Plan files
 
-The "Master Plan" is split across three files to keep each one within context budget:
+The "Master Plan" is split across four files to keep each one within context budget:
 
 - `docs/architecture.md` — target architecture (≤300 lines)
 - `docs/features.md` — feature inventory + status (≤500 lines)
 - `docs/roadmap.md` — ordered priorities (≤200 lines)
+- `docs/risks.md` — accepted-risk register (rows appended by gate overrides; retired only via `/plan-improve`)
 
-Update `features.md` automatically when a feature ships (final phase of `/feature` and `/improve`). Update `architecture.md` and `roadmap.md` only via `/plan-improve` — never silently.
+All four carry `doc_version` + a `## Change history` table — every apply bumps the version and appends a row. Update `features.md` automatically when a feature ships (final phase of `/feature` and `/improve`). Update `architecture.md` and `roadmap.md` only via `/plan-improve` — never silently.
 
 ## Lessons
 
@@ -53,7 +56,7 @@ Stored in `.serena/memories/` — one markdown file per topic. Holds **stable pr
 
 - Beads (tasks)
 - Lessons (bug prevention rules)
-- Master Plan (architecture/features/roadmap)
+- Master Plan (architecture/features/roadmap/risks)
 - Context7 (external library docs)
 
 **Examples** of memory-worthy facts:

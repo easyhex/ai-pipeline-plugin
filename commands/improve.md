@@ -34,6 +34,8 @@ This command runs the **same pipeline as `/feature`** (all phases, including the
 In addition to the standard ground:
 - Read `docs/features.md` Shipped section in full.
 - Identify which shipped feature(s) this change targets. If unclear, ask as a numbered question with a ➡️ recommended answer (per `docs-meta/ELICITATION.md`).
+- Read the target feature's living requirements file `docs/requirements/F-*.md` in full — it is the current truth this change amends.
+- Apply the **update-vs-new rubric** from `docs-meta/REQUIREMENTS_FORMAT.md` (same intent? >50% overlap? original not "done" without this? coherent story?) to DECIDE the path — amend vs successor. The actual file changes happen at Phase 3.5 on approval (see the mint delta below). An intended behavior break is marked `BREAKING` in the Change-history row, and the gate-2 critic is told the break is deliberate (it reviews the migration, not the regression).
 - Run `Grep` for keywords from `$ARGUMENTS` across `src/` (or equivalent source dir) to locate the affected code paths.
 - List the specific files that will be touched. If the list is empty, STOP and tell the user: "I can't locate existing code matching this description. Either the feature isn't shipped, or rephrase the request."
 
@@ -49,10 +51,13 @@ All other phases run identically to `/feature`. Reference the `ai-pipeline:featu
 
 **Differences in specific phases:**
 
+- **Phase 3.5 (Playback gate) — MINT DELTA, read carefully:**
+  - **Amend path** (the update-vs-new rubric said amend): do NOT mint — no new F-ID, no new requirements file. The digest plays back the amended FR/NFR set of the EXISTING `docs/requirements/F-*.md`. On approval: apply the amendment to that file NOW (amended blocks get `status: changed`, `BREAKING` rows where intended, a Change-history row with this slug; mids never change), then commit the spec + amended file (`docs(spec): approved — <slug> (amends <F_ID>)`). Amending before gate-2 is what lets the critic's requirements-drift check compare the diff against current truth instead of firing on every improvement.
+  - **Successor path** (rubric said new): mint per `/feature`'s rule; the successor file carries `supersedes: <old F_ID>`, the old file gets `superseded_by:`; in `docs/features.md` do NOT add a feature line — append a sub-bullet under the existing feature: `— requirements superseded by <new F_ID> (YYYY-MM-DD)`.
 - **Phase 5 (Beads tasks):** Update `docs/features.md` should NOT add a new feature. Instead, append a note to the existing feature's line: `(behavior change in progress: <slug>)`.
 - **Phase 8 (Critic gate-2):** The critic should be told this is an improvement; it pays special attention to "did this break the existing behavior the feature already shipped?" and "are there regression tests?"
 - **Phase 9 (Verify, including 9b visual):** Inherited from `/feature` Phase 9 — visual sub-step runs for frontend projects. The brainstorm in Phase 2 must include `## URLs to verify` listing the affected paths (the changed routes plus any cross-impacted views). For an improvement that doesn't change any URL, list at least `/`.
-- **Phase 11 (Master Plan update):** Do NOT move anything in `docs/features.md` (the feature was already Shipped). Just remove the `(behavior change in progress)` note. Optionally append a `- behavior changed YYYY-MM-DD: <slug>` sub-bullet under the feature.
+- **Phase 11 (Master Plan update):** Do NOT move anything in `docs/features.md` (the feature was already Shipped). Remove the `(behavior change in progress)` note and optionally append a `- behavior changed YYYY-MM-DD: <slug>` sub-bullet. The requirements amendment already happened at Phase 3.5 — here only append the TRACEABILITY.md row as in `/feature` (and, on the successor path, flip the successor file to `status: shipped`).
 - **Memory hooks**: Same as `/feature.md` — Phase 1 reads relevant Serena memories; Phase 8 auto-writes critic-suggested memories.
 
 ---

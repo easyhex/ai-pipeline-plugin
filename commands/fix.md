@@ -82,7 +82,7 @@ If the bug touches multiple files, the worktree decision applies same as `/featu
 
 ## Phase 6: Critic gate-2
 
-Same as `/feature` Phase 8.
+Same as `/feature` Phase 8, except the inputs: /fix runs have no F_ID and no `docs/requirements/` file — pass the diagnosis (`docs/superpowers/specs/<SLUG>-diagnosis.md`) in place of both the spec and the requirements file.
 
 ---
 

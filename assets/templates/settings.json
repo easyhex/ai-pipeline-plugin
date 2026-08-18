@@ -5,7 +5,7 @@
         "matcher": "",
         "hooks": [
           { "type": "command", "command": "bd prime 2>/dev/null || true" },
-          { "type": "command", "command": "echo \"Lessons: $(ls .claude/lessons/*.md 2>/dev/null | wc -l | tr -d ' ') | Pipeline: /init /plan-improve /feature /improve /fix /lesson /remember /questionnaire\"" }
+          { "type": "command", "command": "echo \"Lessons: $(ls .claude/lessons/*.md 2>/dev/null | wc -l | tr -d ' ') | Pipeline: /init /plan-improve /feature /improve /fix /lesson /remember /questionnaire /release\"" }
         ]
       }
     ],
