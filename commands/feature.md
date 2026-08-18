@@ -252,14 +252,11 @@ If `HAS_FRONTEND=no` → skip directly to Phase 10.
 **Read settings:**
 
 ```bash
-# SPEC_FILE is the file whose "## URLs to verify" section drives this gate.
-# /feature uses the default; /fix overrides it with its diagnosis file.
-SPEC_FILE="${SPEC_FILE:-docs/superpowers/specs/<SLUG>.md}"
 MODE=$(jq -r '.pipeline.visual_verify.mode // "required"' .claude/settings.json)
 BASE_URL=$(jq -r '.pipeline.visual_verify.base_url // "http://localhost:3000"' .claude/settings.json)
 DEV_CMD=$(jq -r '.pipeline.visual_verify.dev_command // "auto"' .claude/settings.json)
 TIMEOUT=$(jq -r '.pipeline.visual_verify.dev_port_timeout_sec // 60' .claude/settings.json)
-FAIL_CONSOLE=$(jq -r 'if .pipeline.visual_verify.fail_on_console_error == false then "false" else "true" end' .claude/settings.json)
+FAIL_CONSOLE=$(jq -r 'if .pipeline.visual_verify.fail_on_console_error == false then "false" else "true" end' .claude/settings.json 2>/dev/null || echo true)
 ```
 
 If `MODE=skip` → skip to Phase 10.
@@ -319,6 +316,11 @@ If `SKIP_VISUAL=yes` → skip to Phase 10.
 **Extract URLs from spec:**
 
 ```bash
+# Resolve the spec file STATELESSLY, in this block (bash blocks may run as separate
+# shells — never rely on a variable set in another block or another command file):
+# /feature saves docs/superpowers/specs/<SLUG>.md; /fix saves <SLUG>-diagnosis.md.
+SPEC_FILE="docs/superpowers/specs/<SLUG>.md"
+[ -f "docs/superpowers/specs/<SLUG>-diagnosis.md" ] && SPEC_FILE="docs/superpowers/specs/<SLUG>-diagnosis.md"
 URLS=$(awk '/^## URLs to verify/{flag=1; next} /^## /{flag=0} flag && /^- /' \
   "$SPEC_FILE" | sed -E 's/^- //; s|^https?://[^/]+||' | grep -E '^/' || true)
 [ -z "$URLS" ] && URLS="/"

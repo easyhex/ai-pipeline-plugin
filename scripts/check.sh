@@ -34,24 +34,45 @@ EOF
 then pass "T1 fail_on_console_error=false is honored"
 else fail "T1 fail_on_console_error off-switch is dead (jq // treats false as absent)"; fi
 
-# T2 — Phase 9b spec path must be a SPEC_FILE parameter, and /fix must set it
-# to its diagnosis file (otherwise /fix never extracts URLs).
-if grep -q 'SPEC_FILE' commands/feature.md && grep -q 'SPEC_FILE' commands/fix.md; then
-  pass "T2 visual-verify spec path is parameterized (SPEC_FILE in feature.md + fix.md)"
-else fail "T2 Phase 9b hardcodes the /feature spec path; /fix diagnosis URLs are never read"; fi
+# T2 — Phase 9b must resolve SPEC_FILE statelessly INSIDE the extraction block
+# (bash blocks may run as separate shells — no cross-command variable handoff),
+# prefer the /fix diagnosis file, and the awk must consume the variable.
+if grep -qF -- '-diagnosis.md" ] && SPEC_FILE=' commands/feature.md \
+   && grep -qF '"$SPEC_FILE" | sed' commands/feature.md \
+   && ! grep -qF 'docs/superpowers/specs/<SLUG>.md | sed' commands/feature.md \
+   && grep -qF -- '-diagnosis.md' commands/fix.md; then
+  pass "T2 SPEC_FILE resolved statelessly at extraction, diagnosis file preferred"
+else fail "T2 Phase 9b spec-file resolution is hardcoded or relies on cross-shell state"; fi
 
 # T3 — beads IDs are project-prefixed; nothing may assume a 'bd-' prefix.
-if grep -q "bd-\[0-9\]" commands/*.md; then
+if grep -rq "bd-\[0-9\]" commands/ agents/ assets/ 2>/dev/null; then
   fail "T3 EPIC_ID capture assumes a 'bd-' issue prefix beads does not guarantee"
 else pass "T3 no hardcoded beads ID prefix"; fi
 if grep -q 'bd create -t epic .*--silent' commands/feature.md; then
   pass "T3b epic ID captured via bd create --silent"
 else fail "T3b feature.md does not use 'bd create --silent' for the epic ID"; fi
 
-# T4 — command-count drift: the count lives in assets/templates/PIPELINE.md only.
-if grep -rqE '6[- ](command|slash)' CLAUDE.md docs/DESIGN_NOTES.md .claude-plugin/marketplace.json 2>/dev/null; then
-  fail "T4 stale '6 commands' still asserted outside the canonical count"
-else pass "T4 no stale command counts"; fi
+# T4 — every restated command count must equal the real number of files in commands/.
+# This checks the INVARIANT, not a stale literal: adding an 8th command turns every
+# remaining "7-command" claim into a failure.
+if python3 - <<'EOF'
+import re, glob, sys
+n = len(glob.glob('commands/*.md'))
+files = ['README.md', 'README_RU.md', 'CLAUDE.md', 'docs/DESIGN_NOTES.md',
+         'assets/templates/CLAUDE.md', 'assets/templates/PIPELINE.md',
+         'commands/init.md', '.claude-plugin/plugin.json', '.claude-plugin/marketplace.json']
+bad = []
+for f in files:
+    txt = open(f, encoding='utf-8').read()
+    for m in re.finditer(r'(\d+)[- ](?:user-facing )?(?:command|slash command|команд)', txt):
+        if int(m.group(1)) != n:
+            bad.append(f"{f}: '{m.group(0)}' but commands/ holds {n} files")
+if bad:
+    print('\n'.join(bad))
+sys.exit(1 if bad else 0)
+EOF
+then pass "T4 all restated command counts match commands/ file count"
+else fail "T4 a restated command count disagrees with the actual commands/ inventory"; fi
 V_PLUGIN=$(jq -r '.version' .claude-plugin/plugin.json)
 V_MARKET=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
 if [ "$V_PLUGIN" = "$V_MARKET" ]; then pass "T4b plugin.json and marketplace.json versions agree ($V_PLUGIN)"
@@ -62,16 +83,24 @@ else fail "T4b version drift: plugin.json=$V_PLUGIN marketplace.json=$V_MARKET";
 if grep -qiE 'PUSH TO REMOTE|NEVER stop before pushing|until .?git push.? succeeds' AGENTS.md 2>/dev/null; then
   fail "T5 AGENTS.md mandates git push, contradicting CLAUDE.md rule 6"
 else pass "T5 AGENTS.md has no push mandate"; fi
+# T5b — the authoritative no-push policy must live OUTSIDE the beads-managed marker
+# block, so a beads regeneration of the block cannot silently delete it.
+if awk '/END BEADS INTEGRATION/{f=1; next} f' AGENTS.md 2>/dev/null | grep -q 'No `git push`'; then
+  pass "T5b authoritative git policy survives outside the beads-managed block"
+else fail "T5b no-push policy missing outside the beads marker block (regen would erase it)"; fi
 
 # T6 — no phantom paths: commands/agents ship in the plugin cache, never in user projects.
 if grep -rq '\.claude/commands/\|\.claude/agents/' commands/ assets/templates/PIPELINE.md 2>/dev/null; then
   fail "T6 reference to .claude/commands|agents/ — those paths do not exist in user projects"
 else pass "T6 no phantom .claude/commands|agents paths"; fi
 
-# T7 — a bare index.html must not force the visual gate on compute repos.
-if grep -q '^\[ -f index.html \] && HAS_FRONTEND=yes$' commands/feature.md; then
-  fail "T7 unconditional '[ -f index.html ]' frontend detection hard-blocks compute repos"
-else pass "T7 index.html detection is conditional"; fi
+# T7 — a bare index.html must not force the visual gate on compute repos:
+# the index.html rule must be guarded by package.json (positive invariant),
+# and the old unconditional line must be gone.
+if grep -qF 'index.html ] && [ -f package.json' commands/feature.md \
+   && ! grep -q '^\[ -f index.html \] && HAS_FRONTEND=yes$' commands/feature.md; then
+  pass "T7 index.html detection requires package.json alongside"
+else fail "T7 index.html frontend detection is unconditional (hard-blocks compute repos)"; fi
 
 # T8 — all shipped JSON parses.
 for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json assets/templates/settings.json; do

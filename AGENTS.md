@@ -68,3 +68,7 @@ bd close <id>         # Complete work
 
 This section intentionally overrides the beads-generated push mandate: the git policy in CLAUDE.md wins.
 <!-- END BEADS INTEGRATION -->
+
+## Git policy (authoritative — survives beads regeneration)
+
+No `git push` from inside Claude — the user pushes manually (CLAUDE.md rule 6). This section sits outside the beads-managed marker block above on purpose: if a beads regeneration restores a push mandate inside the block, this section wins, and `bash scripts/check.sh` (T5) flags the contradiction.
