@@ -31,6 +31,10 @@ Read in full:
 - `docs/features.md`
 - `docs/roadmap.md`
 - Every file under `.claude/lessons/`
+- `docs/glossary.md` (use its terms; a term used contrary to the glossary is a defect)
+- `docs/risks.md` — note every `open` risk whose scope plausibly matches this work
+- `docs/analysis/analogs.md` — what existing solutions prove right or wrong here
+- Relevant living requirement files under `docs/requirements/F-*.md` (features this work touches)
 - Answered questionnaires under `docs/requirements/questionnaire-*.md` (if any) — a questionnaire counts as answered when its answer stubs (`> Ответ:` / `> Answer:` lines) are non-empty; answered ones are user decisions with provenance, carry them into the spec's "User decisions" section
 
 Detect libraries from package manifests (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc.). For each detected library that is *plausibly relevant* to this feature, query Context7:
@@ -80,21 +84,7 @@ The output is a spec. Save it to:
 docs/superpowers/specs/<SLUG>.md
 ```
 
-**Mandatory spec shape** (add any part the brainstorm output lacks; prose in the conversation's language, IDs/statuses/markers always English):
-
-```markdown
----
-weight: light | standard | deep
----
-## User decisions (verbatim)
-<numbered, quoted from the interview and answered questionnaires — requirements with provenance>
-
-## Assumptions (machine, unconfirmed)
-<every material choice the user did not state — each becomes a playback-digest line>
-
-## Out of scope (confirmed)
-<what was explicitly refused>
-```
+**Mandatory spec shape — `docs-meta/SPEC_FORMAT.md` is the schema** (add any part the brainstorm output lacks): `weight:` frontmatter; `## User decisions (verbatim)`; `## Assumptions (machine, unconfirmed)`; `## Out of scope (confirmed)`; `## Functional requirements` (FR-NN, each with an EARS acceptance criterion — mandatory at standard/deep); `## Non-functional requirements` (NFR table: threshold WITH units, proving command, counter-metric); `## Analogs considered`; `## Test plan / seams`; `## URLs to verify` (frontend only). Prose in the conversation's language; IDs/statuses/markers always English.
 
 **Frontend hint (NEW):** If the project has a frontend (`package.json` deps include `react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro`, OR a root `index.html` exists alongside `package.json`), the spec MUST include a section:
 
@@ -115,8 +105,9 @@ Invoke the `senior-critic` subagent (ships with this plugin — invoke it by nam
 ```
 Use the senior-critic subagent to review this spec at gate 1.
 Inputs:
-  - Spec: docs/superpowers/specs/<SLUG>.md
-  - docs/architecture.md, docs/features.md, docs/roadmap.md
+  - Spec: docs/superpowers/specs/<SLUG>.md  (schema: docs-meta/SPEC_FORMAT.md)
+  - docs/architecture.md, docs/features.md, docs/roadmap.md, docs/risks.md
+  - docs/glossary.md, docs/analysis/analogs.md
   - All files under .claude/lessons/
   - Original user request: "<$ARGUMENTS>"
 Slug: <SLUG>
@@ -129,7 +120,7 @@ The critic saves a report and returns a one-line summary like:
 **Decision (synchronous — wait for the user's answer; there are no timeouts):**
 - Critical > 0: present the findings, ask `continue / address / override`.
   - `address` → re-run Phase 2 with critic findings as additional input. Max 2 retries; if still Critical, put the decision to the user again.
-  - `override` → user must provide a written reason; append to the report file.
+  - `override` → user must provide a written reason; append it to the report file AND append a row to `docs/risks.md` (Open table: `R-NNN` next unused, date, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
   - `continue` → proceed.
 - Important-only (Critical == 0, Important > 0): do NOT stop here — carry the Important findings, in full, into the Phase 3.5 playback digest (one consolidated stop).
 - Nice-to-have only: proceed; mention the one-line summary.
@@ -153,6 +144,9 @@ Present the decision digest and WAIT for explicit approval. This gate runs at ev
 **Rules:**
 - The original request **authorizes planning only** — it is NOT approval to build, even if it says "just do it". Approval happens here, after the user sees the digest.
 - On approval, append to the spec file: `**Approved by user:** YYYY-MM-DD (weight: <weight>)`.
+- On approval, mint the feature's ID and requirements file:
+  - `F_ID` = next unused `F-NNN` across ALL sections of `docs/features.md`.
+  - Create `docs/requirements/<F_ID>-<slug>.md` per `docs-meta/REQUIREMENTS_FORMAT.md` from the approved spec: copy FR/NFR blocks, give every requirement a `mid:` (`uuidgen | tr A-F a-f`), `status: in_progress` in the frontmatter, source lines pointing at the spec's User decisions.
 - If the user amends anything: fold the amendment into the spec (updating "User decisions" verbatim), re-run critic gate-1 only if the change is material, and play back again.
 - Open `TBC` markers > 0: say so explicitly. The user may answer them now, or approve anyway — approved-with-TBC markers stay in the spec as tracked debt and open the next interview.
 - `deep` weight only: before presenting the digest, run one extra edge-case round (failure modes, boundary conditions) and fold the answers in.
@@ -189,7 +183,7 @@ EPIC_ID=$(bd create -t epic "<feature description>" --silent)
 bd dep add <task-id> $EPIC_ID --type parent-child
 ```
 
-Update `docs/features.md`: move/add the feature to "In progress" with the epic ID and slug.
+Update `docs/features.md`: move/add the feature to "In progress" as `- [ ] [<F_ID>] <slug> — <one-line> — in-progress` (F_ID minted at Phase 3.5) with the epic ID.
 
 ---
 
@@ -235,7 +229,8 @@ Use the senior-critic subagent to review at gate 2.
 Inputs:
   - Diff: git diff main..HEAD (or git diff main..feature/<slug> if in worktree)
   - Spec: docs/superpowers/specs/<SLUG>.md
-  - docs/architecture.md, docs/features.md
+  - Requirements file: docs/requirements/<F_ID>-<slug>.md
+  - docs/architecture.md, docs/features.md, docs/risks.md
   - All files under .claude/lessons/
 Slug: <SLUG>
 Gate: 2
@@ -259,12 +254,14 @@ If a memory with that slug already exists (check via `mcp__serena__list_memories
 
 If `mcp__serena__write_memory` fails (Serena MCP not running), warn once with the slug and continue — do NOT block the pipeline.
 
-Print a one-line summary: `Memories captured: <N> new, <M> updated, <P> skipped`.
+**Decision-class suggestions → ADR:** any suggestion the critic prefixed with `[decision]` ALSO becomes a committed decision record: create `docs/decisions/NNNN-<slug>.md` per `docs-meta/ADR_FORMAT.md` (NNNN = next free number), filling Context/Decision/Consequences from the suggestion and Binds from the F/FR/NFR ids in scope. Include it in the Phase 11 docs commit. The Serena memory is still written — it is the agent-facing mirror.
+
+Print a one-line summary: `Memories captured: <N> new, <M> updated, <P> skipped. ADRs written: <K>`.
 
 **Decision (synchronous — wait for the user's answer; there are no timeouts):**
 - Critical > 0: present the findings, ask `continue / address / override`.
   - `address` → for each Critical/Important finding, run `bd create` to add a new task, then loop back to Phase 7 for those tasks. Max 2 cycles.
-  - `override` → require written reason in report.
+  - `override` → require written reason in report AND append a `docs/risks.md` row (same protocol as gate-1).
   - `continue` → proceed.
 - Important-only: present the Important findings (content, not just the count) and ask `continue / address`.
 - Nice-to-have only: proceed.
@@ -525,14 +522,22 @@ Do NOT push to remote. Print the merge SHA or PR URL and tell the user to push m
 
 ## Phase 11: Master Plan update
 
-Update `docs/features.md`: move the feature from "In progress" to "Shipped" with date:
-```
-- [x] [F-XXX] <slug> — <description> — shipped YYYY-MM-DD
-```
+1. `docs/features.md`: move the feature from "In progress" to "Shipped" (the version stamp is added later by `/release`):
+   ```
+   - [x] [<F_ID>] <slug> — <description> — shipped YYYY-MM-DD
+   ```
+   Append a Change-history row and bump `doc_version`.
+
+2. `docs/requirements/<F_ID>-<slug>.md`: set frontmatter `status: shipped`; append a Change-history row.
+
+3. `docs/TRACEABILITY.md`: append one row (create the file with a header table if missing):
+   ```
+   | <F_ID> | <slug> | specs/<SLUG>.md | plans/<SLUG>.md | <gate-1 report> | <gate-2 report> | <evidence dir or —> | <merge SHA> | YYYY-MM-DD |
+   ```
 
 ```bash
-git add docs/features.md
-git commit -m "docs: feature shipped — <slug>"
+git add docs/features.md docs/requirements/ docs/TRACEABILITY.md docs/decisions/ docs/risks.md 2>/dev/null
+git commit -m "docs: feature shipped — <slug> (<F_ID>)"
 ```
 
 Close the beads epic:

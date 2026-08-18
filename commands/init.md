@@ -203,7 +203,7 @@ If the templates directory cannot be found, STOP with the error message above.
 Then create cwd subdirectories and copy templates:
 
 ```bash
-mkdir -p .claude/lessons docs/superpowers/specs docs/superpowers/plans docs/superpowers/critic-reports docs/superpowers/elicitation docs/requirements docs-meta .claude
+mkdir -p .claude/lessons docs/superpowers/specs docs/superpowers/plans docs/superpowers/critic-reports docs/superpowers/elicitation docs/requirements docs/decisions docs/analysis docs-meta .claude
 
 cp "$TEMPLATE_DIR/CLAUDE.md"          ./CLAUDE.md
 cp "$TEMPLATE_DIR/architecture.md"    ./docs/architecture.md
@@ -211,8 +211,14 @@ cp "$TEMPLATE_DIR/features.md"        ./docs/features.md
 cp "$TEMPLATE_DIR/roadmap.md"         ./docs/roadmap.md
 cp "$TEMPLATE_DIR/PIPELINE.md"        ./docs-meta/PIPELINE.md
 cp "$TEMPLATE_DIR/LESSON_FORMAT.md"   ./docs-meta/LESSON_FORMAT.md
-cp "$TEMPLATE_DIR/ELICITATION.md"       ./docs-meta/ELICITATION.md
-cp "$TEMPLATE_DIR/ELICITATION_TREES.md" ./docs-meta/ELICITATION_TREES.md
+cp "$TEMPLATE_DIR/ELICITATION.md"        ./docs-meta/ELICITATION.md
+cp "$TEMPLATE_DIR/ELICITATION_TREES.md"  ./docs-meta/ELICITATION_TREES.md
+cp "$TEMPLATE_DIR/SPEC_FORMAT.md"        ./docs-meta/SPEC_FORMAT.md
+cp "$TEMPLATE_DIR/REQUIREMENTS_FORMAT.md" ./docs-meta/REQUIREMENTS_FORMAT.md
+cp "$TEMPLATE_DIR/ADR_FORMAT.md"         ./docs-meta/ADR_FORMAT.md
+cp "$TEMPLATE_DIR/risks.md"              ./docs/risks.md
+cp "$TEMPLATE_DIR/glossary.md"           ./docs/glossary.md
+cp "$TEMPLATE_DIR/analogs.md"            ./docs/analysis/analogs.md
 cp "$TEMPLATE_DIR/gitignore"          ./.gitignore       # rename: no leading dot in source
 cp "$TEMPLATE_DIR/settings.json"      ./.claude/settings.json
 ```
@@ -227,7 +233,9 @@ jq --arg w "$WEIGHT" '.pipeline.default_weight = $w' .claude/settings.json > /tm
 Verify all files copied:
 ```bash
 for f in CLAUDE.md docs/architecture.md docs/features.md docs/roadmap.md \
+         docs/risks.md docs/glossary.md docs/analysis/analogs.md \
          docs-meta/PIPELINE.md docs-meta/LESSON_FORMAT.md docs-meta/ELICITATION.md docs-meta/ELICITATION_TREES.md \
+         docs-meta/SPEC_FORMAT.md docs-meta/REQUIREMENTS_FORMAT.md docs-meta/ADR_FORMAT.md \
          .gitignore .claude/settings.json; do
   test -f "$f" && echo "  ✓ $f" || echo "  ✗ MISSING: $f"
 done
@@ -258,7 +266,11 @@ Use the description (`$ARGUMENTS`) and the confirmed interview answers to popula
    - Now: top 3 features from features.md, one-sentence rationale each
    - Next: features 4-6
    - Later: features 7-8
-   - Explicitly NOT doing: 1-2 honest entries
+   - Explicitly NOT doing: entries from the user's OWN negative-scope answers (Round 2); machine-added entries carry `(proposed — unconfirmed)`
+
+4. **`docs/glossary.md`** — seed one row per domain term/symbol the interview surfaced (with units where numeric). Empty is acceptable only if the interview surfaced none.
+
+5. **`docs/analysis/analogs.md`** (optional fill — D4): ask one ❓: "Заполнить анализ аналогов сейчас (web-поиск, несколько минут)?" — ➡️ recommend `yes` for internal/launch stakes, `skip` for hobby. On yes: WebSearch for existing solutions to `$ARGUMENTS`, fill 2-5 rows (what to copy / what to avoid, sources, today's date in Checked). On skip: leave the template's empty state; `/plan-improve` fills later.
 
 Use Context7 if available to ground stack-specific advice:
 ```
@@ -337,7 +349,9 @@ Wrote:
   - docs/architecture.md (filled)
   - docs/features.md (8 planned features)
   - docs/roadmap.md (3-now, 3-next, 2-later)
+  - docs/risks.md, docs/glossary.md (seeded), docs/analysis/analogs.md
   - docs-meta/PIPELINE.md, docs-meta/LESSON_FORMAT.md, docs-meta/ELICITATION.md
+  - docs-meta/SPEC_FORMAT.md, docs-meta/REQUIREMENTS_FORMAT.md, docs-meta/ADR_FORMAT.md
   - .claude/settings.json (ai-pipeline plugin enabled)
   - .claude/lessons/, docs/superpowers/{specs,plans,critic-reports}/
 

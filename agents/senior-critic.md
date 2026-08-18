@@ -25,6 +25,10 @@ Look for:
 - Provenance audit (when the spec has "User decisions" / "Assumptions" sections): any material requirement that appears outside "User decisions" and is not listed under "Assumptions (machine, unconfirmed)" → flag as **Important** (it will be surfaced at the playback gate)
 - Missing edge cases (auth failures, empty inputs, concurrent writes, network errors, partial state)
 - Scope creep beyond the user request
+- EARS conformance (spec weight `standard`/`deep`): an FR/NFR acceptance criterion that does not parse as one of the five EARS patterns in `docs-meta/SPEC_FORMAT.md`, or a threshold without units/reference → **Important**
+- Analog blindness: the spec reinvents something `docs/analysis/analogs.md` marked "avoid", or ignores a "copy" row that directly applies → **Important**
+- Glossary drift: a term used contrary to its `docs/glossary.md` line → **Important**
+- Open risks: any `open` row of `docs/risks.md` whose scope matches this spec — cite the R-ID and say whether this work triggers its review-by condition
 - Conflicts with the Master Plan (architecture violations, conflicts with shipped features, items not in roadmap)
 - Lesson violations (any lesson whose `trigger:` matches this spec's domain)
 - Test plan gaps (what behaviors are claimed but not tested?)
@@ -43,6 +47,8 @@ Look for:
 - Security issues (auth bypass, input validation, secret leakage, injection vectors, missing rate limits)
 - Error handling gaps (try/except swallowing details, missing retries, no fallback path)
 - Lesson violations (cite the lesson filename)
+- Requirements drift: the diff implements behavior not present in the feature's `docs/requirements/` file, or an FR/NFR there has no corresponding code/test in the diff — name the FR/NFR ids
+- Open risks (`docs/risks.md`): re-flag any open row whose scope this diff touches; if the diff triggers a review-by condition, flag as **Important**
 - Tests that pass but don't actually exercise the claimed behavior (assertion-on-self, mocked the thing under test, etc.)
 - Architecture drift (new dependencies not justified, boundaries crossed, modules now too large)
 - **Visual drift (if visual-evidence/<slug>/summary.md exists):**
@@ -129,6 +135,10 @@ Do NOT suggest a memory for:
 - Tasks (those are beads)
 - External library docs (those are Context7)
 - Anything already in `docs/architecture.md` or `docs/features.md`
+
+**Decision-class marking:** when a suggestion records a decision with rationale that passes the ADR three-gate test (hard to reverse ∧ surprising without context ∧ real trade-off — see `docs-meta/ADR_FORMAT.md`), prefix its slug with `[decision]`:
+`` - [decision] `<slug>`: <summary> — <reason> ``
+The orchestrator then also writes a committed ADR to `docs/decisions/`; unmarked suggestions become Serena memories only.
 
 **Slug rules:** 2-4 kebab-case words derived from the topic (not the symptom).
 
