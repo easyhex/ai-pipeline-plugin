@@ -1,7 +1,7 @@
 {
   "name": "ai-pipeline",
   "description": "7-command AI development pipeline (/init, /plan-improve, /feature, /improve, /fix, /lesson, /remember) with auto-critic at two gates, lessons-learned flywheel, Serena memory, and Playwright-MCP visual verification gate for frontend projects. Builds on Superpowers, Beads, Context7.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "easyhex",
     "url": "https://github.com/easyhex"

@@ -33,12 +33,12 @@ Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__ser
 |---|---|---|---|
 | 1 | ground | Reads `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
 | 2 | brainstorm | Generates spec → saves to `docs/superpowers/specs/YYYY-MM-DD-<slug>.md` | `superpowers:brainstorming` |
-| 3 | critic-1 | Senior-critic reviews the spec | `.claude/agents/senior-critic.md` |
+| 3 | critic-1 | Senior-critic reviews the spec | `senior-critic` subagent (ships with the ai-pipeline plugin) |
 | 4 | plan | Decomposes into 2-5 min tasks | `superpowers:writing-plans` |
 | 5 | bd-tasks | Creates beads tasks + dependencies | `bd create`, `bd dep add` |
 | 6 | worktree (conditional) | Isolates work in a worktree if >3 sub-tasks | `superpowers:using-git-worktrees` |
 | 7 | TDD loop | RED → verify-fail → GREEN → verify-pass → REFACTOR → `git commit` per task | `superpowers:test-driven-development` |
-| 8 | critic-2 | Senior-critic reviews the cumulative diff. + auto-write suggested memories. | `.claude/agents/senior-critic.md` |
+| 8 | critic-2 | Senior-critic reviews the cumulative diff. + auto-write suggested memories. | `senior-critic` subagent (ships with the ai-pipeline plugin) |
 | 9 | verify | Runs proving commands, reads exit codes | `superpowers:verification-before-completion` |
 | 9b | visual-verify (frontend only) | Drives Playwright MCP across spec's `## URLs to verify`, captures screenshot + a11y snapshot + console; verdict in `docs/superpowers/visual-evidence/<slug>/summary.md` | inline in command file |
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |

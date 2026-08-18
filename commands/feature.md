@@ -67,7 +67,7 @@ The brainstorming skill produces a spec. Save it to:
 docs/superpowers/specs/<SLUG>.md
 ```
 
-**Frontend hint (NEW):** If the project has a frontend (`package.json` deps include `react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro` OR a root `index.html` exists), the spec MUST include a section:
+**Frontend hint (NEW):** If the project has a frontend (`package.json` deps include `react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro`, OR a root `index.html` exists alongside `package.json`), the spec MUST include a section:
 
 ```markdown
 ## URLs to verify
@@ -83,7 +83,7 @@ If the brainstorm has a real clarifying question (not stylistic), ask the user. 
 
 ## Phase 3: Critic gate-1
 
-Invoke the `senior-critic` subagent (defined in `.claude/agents/senior-critic.md`):
+Invoke the `senior-critic` subagent (ships with this plugin — invoke it by name via the Task tool; it is NOT a file in the user's project):
 
 ```
 Use the senior-critic subagent to review this spec at gate 1.
@@ -131,7 +131,8 @@ bd dep add <task-N-id> <task-N-1-id> --type blocks
 
 Create a parent epic for the feature and add `parent-child` deps from each task to the epic:
 ```bash
-EPIC_ID=$(bd create -t epic "<feature description>" | grep -oE 'bd-[0-9]+')
+# --silent prints only the issue ID; beads ID prefixes are project-derived, never assume "bd-"
+EPIC_ID=$(bd create -t epic "<feature description>" --silent)
 bd dep add <task-id> $EPIC_ID --type parent-child
 ```
 
@@ -232,12 +233,18 @@ After the proving commands above pass, run a visual gate **only for frontend pro
 
 ```bash
 HAS_FRONTEND=no
+FRONTEND_RULE=""
 if [ -f package.json ]; then
   jq -e '.dependencies + .devDependencies | keys[] |
     test("^(react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro)$")' \
-    package.json >/dev/null 2>&1 && HAS_FRONTEND=yes
+    package.json >/dev/null 2>&1 && { HAS_FRONTEND=yes; FRONTEND_RULE="framework dependency in package.json"; }
 fi
-[ -f index.html ] && HAS_FRONTEND=yes
+# A bare index.html (WASM demo, docs page) must NOT gate a pure compute repo:
+# index.html counts only alongside package.json (there is no dev server to probe otherwise).
+if [ "$HAS_FRONTEND" = "no" ] && [ -f index.html ] && [ -f package.json ]; then
+  HAS_FRONTEND=yes; FRONTEND_RULE="index.html alongside package.json"
+fi
+[ "$HAS_FRONTEND" = "yes" ] && echo "Frontend detected: $FRONTEND_RULE"
 ```
 
 If `HAS_FRONTEND=no` → skip directly to Phase 10.
@@ -249,7 +256,7 @@ MODE=$(jq -r '.pipeline.visual_verify.mode // "required"' .claude/settings.json)
 BASE_URL=$(jq -r '.pipeline.visual_verify.base_url // "http://localhost:3000"' .claude/settings.json)
 DEV_CMD=$(jq -r '.pipeline.visual_verify.dev_command // "auto"' .claude/settings.json)
 TIMEOUT=$(jq -r '.pipeline.visual_verify.dev_port_timeout_sec // 60' .claude/settings.json)
-FAIL_CONSOLE=$(jq -r '.pipeline.visual_verify.fail_on_console_error // true' .claude/settings.json)
+FAIL_CONSOLE=$(jq -r 'if .pipeline.visual_verify.fail_on_console_error == false then "false" else "true" end' .claude/settings.json 2>/dev/null || echo true)
 ```
 
 If `MODE=skip` → skip to Phase 10.
@@ -309,8 +316,13 @@ If `SKIP_VISUAL=yes` → skip to Phase 10.
 **Extract URLs from spec:**
 
 ```bash
+# Resolve the spec file STATELESSLY, in this block (bash blocks may run as separate
+# shells — never rely on a variable set in another block or another command file):
+# /feature saves docs/superpowers/specs/<SLUG>.md; /fix saves <SLUG>-diagnosis.md.
+SPEC_FILE="docs/superpowers/specs/<SLUG>.md"
+[ -f "docs/superpowers/specs/<SLUG>-diagnosis.md" ] && SPEC_FILE="docs/superpowers/specs/<SLUG>-diagnosis.md"
 URLS=$(awk '/^## URLs to verify/{flag=1; next} /^## /{flag=0} flag && /^- /' \
-  docs/superpowers/specs/<SLUG>.md | sed -E 's/^- //; s|^https?://[^/]+||' | grep -E '^/' || true)
+  "$SPEC_FILE" | sed -E 's/^- //; s|^https?://[^/]+||' | grep -E '^/' || true)
 [ -z "$URLS" ] && URLS="/"
 ```
 

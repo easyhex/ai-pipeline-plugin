@@ -58,27 +58,17 @@ bd close <id>         # Complete work
 
 ## Session Completion
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
+**When ending a work session:**
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
+2. **Run quality gates** (if code changed) - `bash scripts/check.sh`, tests, linters
 3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+4. **Commit locally.** Do NOT `git push` — this repo forbids pushing from inside Claude (see CLAUDE.md rule 6: "No git push from inside Claude. User pushes manually."). `bd dolt push` for beads data is also the user's call.
+5. **Hand off** - Provide context for next session
 
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+This section intentionally overrides the beads-generated push mandate: the git policy in CLAUDE.md wins.
 <!-- END BEADS INTEGRATION -->
+
+## Git policy (authoritative — survives beads regeneration)
+
+No `git push` from inside Claude — the user pushes manually (CLAUDE.md rule 6). This section sits outside the beads-managed marker block above on purpose: if a beads regeneration restores a push mandate inside the block, this section wins, and `bash scripts/check.sh` (T5) flags the contradiction.

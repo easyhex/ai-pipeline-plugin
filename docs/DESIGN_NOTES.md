@@ -1,14 +1,14 @@
 # Design notes
 
-This plugin packages a 6-command AI development pipeline. The full design rationale is captured in two specs that live in the predecessor repo (the original `project_template/` directory used to develop this plugin):
+This plugin packages a slash-command AI development pipeline (the command inventory lives in `assets/templates/PIPELINE.md`). The full design rationale is captured in two specs that live in the predecessor repo (the original `project_template/` directory used to develop this plugin):
 
-- **Pipeline design** — the 6 commands, the `senior-critic` agent, the lessons system, the Master Plan split: see the original spec at `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-design.md`
+- **Pipeline design** — the user-facing commands, the `senior-critic` agent, the lessons system, the Master Plan split: see the original spec at `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-design.md`
 - **Plugin packaging design** — turning the per-project pipeline into an installable Claude Code plugin: see `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-plugin-design.md`
 - **Serena memory integration (v0.2.0)** — see the spec at `project_template/docs/superpowers/specs/2026-04-25-serena-memory-integration.md` for the full design (5-layer context model, /remember command, critic-driven auto-capture).
 
 ## Why this design
 
-**Why 6 commands and not more?**
+**Why so few commands and not more?**
 Each user-facing command corresponds to one cognitive operation: bootstrap, refine plan, build new, modify existing, debug, capture lesson. Internal phases (brainstorm, plan, TDD, critic, verify, finish) are not commands because the user shouldn't have to orchestrate them — that's the pipeline's job.
 
 **Why a critic at two gates?**
