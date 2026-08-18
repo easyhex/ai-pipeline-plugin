@@ -354,20 +354,38 @@ if grep -q 'Test | Analysis | Inspection | Review' assets/templates/REQUIREMENTS
   pass "T43 verify-method enum + code markers + suspect links in schema"
 else fail "T43 requirements schema lacks verification-method/code-link fields"; fi
 
-# T44 — project class: asked at /init, stored, and drives visual/quant defaults; model.md ships.
+# T44 — project class: asked at /init, stored, drives defaults; model.md ships AND is
+# wired (plan-improve owns it, ground reads it) — template-only shipping is a defect.
 if grep -q 'project_class' commands/init.md \
    && grep -q 'project_class' assets/templates/settings.json \
    && [ -f assets/templates/model.md ] \
-   && grep -q 'model.md' commands/init.md; then
-  pass "T44 project class stored + model.md for compute classes"
-else fail "T44 project class missing (web defaults still forced on math projects)"; fi
+   && grep -q 'model.md' commands/init.md \
+   && grep -q 'model.md' commands/plan-improve.md \
+   && [ "$(grep -c 'model.md' commands/feature.md)" -ge 2 ]; then
+  pass "T44 project class stored + model.md owned and ground-read"
+else fail "T44 project class missing or model.md is write-only after /init"; fi
 
 # T45 — numeric specs must carry Mathematical approach + Interface contracts (gate-1 Critical).
 if grep -q 'Mathematical approach' assets/templates/SPEC_FORMAT.md \
    && grep -q 'Interface contracts' assets/templates/SPEC_FORMAT.md \
-   && grep -q 'Mathematical approach' agents/senior-critic.md; then
-  pass "T45 math sections mandated and critic-enforced"
+   && grep -q 'Mathematical approach' agents/senior-critic.md \
+   && grep -q 'Interface contracts' agents/senior-critic.md; then
+  pass "T45 math sections mandated and critic-enforced (both)"
 else fail "T45 numeric specs can still omit the mathematics"; fi
+
+# T47 — no 9b skip path may bypass 9c: the only 'skip to Phase 10' left is 9c's own.
+if [ "$(grep -c 'skip to Phase 10' commands/feature.md)" = "1" ] \
+   && ! grep -q 'skip directly to Phase 10' commands/feature.md; then
+  pass "T47 all pre-9c skip paths route through 9c"
+else fail "T47 a 9b skip path jumps straight to Phase 10 — compute projects bypass the quant gate"; fi
+
+# T48 — verdict honesty: zero-checks branch + mutation threshold defined + dead-end routed.
+if grep -qi 'zero collected checks' commands/feature.md \
+   && grep -q 'mutation_threshold' assets/templates/settings.json \
+   && grep -q 'mutation_threshold' commands/feature.md \
+   && grep -qi '9c' commands/feature.md && grep -A2 -i 'partial.*/.*failed.*required\|failed.*+ .QMODE=required' commands/feature.md | grep -qi 'address\|override' ; then
+  pass "T48 no vacuous verified; mutation threshold real; 9c failure has an address route"
+else fail "T48 9c can overclaim on empty checks / phantom threshold / dead-end failure"; fi
 
 # T46 — inheritance deltas: /improve and /fix explicitly define their 9c behavior.
 if grep -q '9c' commands/improve.md && grep -q '9c' commands/fix.md; then

@@ -1,0 +1,3 @@
+/improve and /fix run /feature's phases verbatim except for explicitly listed deltas. Therefore: ANY new stateful step added to a /feature phase (a mint, a file write, a commit, a settings read) MUST get a matching delta or explicit exclusion in improve.md AND fix.md in the same change — otherwise the inherited step runs unconditionally in contexts it was never designed for.
+
+Captured by senior-critic at gate-2 of feature/v0.5-requirements on 2026-08-18. Omitting this produced that gate's Critical finding: /improve inherited Phase 3.5's unconditional F-ID mint and would have created a duplicate requirements file on every improvement run.

@@ -30,7 +30,8 @@
       "benchmark_command": "",
       "tolerance_report_command": "",
       "mutation": "advisory",
-      "mutation_command": ""
+      "mutation_command": "",
+      "mutation_threshold": 80
     },
     "visual_verify": {
       "mode": "required",

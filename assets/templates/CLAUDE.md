@@ -123,6 +123,6 @@ Settings live under `.claude/settings.json` → `pipeline.quant_verify`:
 | `seeds` | `[0]` | seed set exported as `SEED` to every proving command; pass^k across all of them |
 | `budgets` | `[]` | global {name, command, threshold} checks run alongside NFR commands |
 | `property_test_command` / `benchmark_command` / `tolerance_report_command` | `""` | project-wide checks (empty = skip) |
-| `mutation` / `mutation_command` | `advisory` / `""` | `off` / `advisory` (survivors → Important findings) / `required` (survivors fail the gate) |
+| `mutation` / `mutation_command` / `mutation_threshold` | `advisory` / `""` / `80` | `off` / `advisory` (survivors → Important findings) / `required` (score below threshold fails the gate; empty command with `required` → verdict `partial`) |
 
-`pipeline.project_class` (written by `/init`) drives the `by_class` resolution and the visual-gate default (compute classes skip visual).
+`pipeline.project_class` (written by `/init`) drives the `by_class` resolution and the visual-gate default (compute classes and `cli` skip visual).

@@ -156,7 +156,7 @@ Resolve the plugin templates directory now (same procedure as Phase 3) and read 
 
 **Round 1 (always):**
 - ❓ Stakes: hobby / internal tool / production launch — with a ➡️ recommendation inferred from `$ARGUMENTS`. Maps to the default ceremony weight (hobby→`light`, internal→`standard`, launch→`deep`); Phase 3 writes it into `.claude/settings.json` → `pipeline.default_weight`, and `/feature`'s weight question recommends it.
-- ❓ Project class: numerical-library / simulation / data-pipeline / service / ui-app / cli — ➡️ recommend from `$ARGUMENTS`. Written to `.claude/settings.json` → `pipeline.project_class`; sets gate defaults (compute classes: `visual_verify.mode: skip`, quant gate required; ui-app: visual required) and the coverage-tree variant recommendation (compute → numerics, else generic; see `ELICITATION_TREES.md`).
+- ❓ Project class: numerical-library / simulation / data-pipeline / service / ui-app / cli — ➡️ recommend from `$ARGUMENTS`. Written to `.claude/settings.json` → `pipeline.project_class`; sets gate defaults (compute classes and `cli`: `visual_verify.mode: skip`; compute classes: quant gate required; ui-app: visual required) and the coverage-tree variant recommendation (compute → numerics, else generic; see `ELICITATION_TREES.md`).
 - ❓ Primary user of the app (who, and what they do with it).
 - ❓ Tech stack — recommend one from `$ARGUMENTS` context; free-text welcome (a math-heavy system may be NumPy/SciPy/JAX, Fortran-interop, GPU — never force a web framework).
 

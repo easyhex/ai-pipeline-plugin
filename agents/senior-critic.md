@@ -18,6 +18,7 @@ You receive:
 - The spec file (path provided in your prompt; schema: `docs-meta/SPEC_FORMAT.md` — read the spec's `weight:` frontmatter, it scopes the EARS check)
 - `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, `docs/risks.md`
 - `docs/glossary.md`, `docs/analysis/analogs.md`
+- `docs/model.md` (when it exists) and the project class (`jq -r '.pipeline.project_class' .claude/settings.json` — "compute-class" means numerical-library / simulation / data-pipeline)
 - All files under `.claude/lessons/`
 - The original user request that started the pipeline
 
@@ -42,9 +43,11 @@ Look for:
 
 ### Gate 2: post-implementation (reviewing a diff)
 
+**Input order discipline:** read the DIFF first and complete the claims-check quarantine stage 1 (trace the numerical paths of the change with your own eyes) BEFORE opening the spec or any document that describes what the change is supposed to do. Only then load the rest.
+
 You receive:
-- The base branch and the head branch (run `git diff base..head` to see the change)
-- The spec it was built from
+- The base branch and the head branch (run `git diff base..head` to see the change) — **read first**
+- The spec it was built from — **only after the stage-1 trace**
 - The feature's living requirements file under `docs/requirements/` (when one exists — /fix runs have none)
 - `docs/architecture.md`, `docs/features.md`, `docs/risks.md`
 - All files under `.claude/lessons/`
@@ -66,7 +69,7 @@ Look for:
   - Stochastic test without a pinned seed → **Important**
   - Missing NaN/Inf/domain-boundary handling at public API boundaries → **Important**
   - Unjustified change in accumulation/summation order → **Important**
-- **Claims-check quarantine (two stages, in order):** stage 1 — trace the diff's numerical paths WITHOUT reading the spec; stage 2 — only then load the spec's claimed invariants and tolerances and compare them to your own trace. The spec is the change's account of itself: testimony, not evidence.
+- **Claims-check quarantine (stage 2 — stage 1 already happened per the input-order discipline above):** now load the spec's claimed invariants and tolerances and compare them to the trace you made before reading it. The spec is the change's account of itself: testimony, not evidence.
 - **Verification-gap lens:** for each behavior the diff changes, ask "if this broke, which check fails?" — changed behavior protected by no effective check → **Important**
 - **Verifier-sabotage check:** compare every diff to test files, tolerances, seeds, and fixtures against the task's stated intent; weakening a tolerance, deleting a test, or changing a seed so a gate passes → **Critical**
 - Architecture drift (new dependencies not justified, boundaries crossed, modules now too large)
