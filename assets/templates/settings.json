@@ -21,6 +21,18 @@
   "pipeline": {
     "finish_mode": "merge",
     "default_weight": "standard",
+    "project_class": "unset",
+    "quant_verify": {
+      "mode": "by_class",
+      "seeds": [0],
+      "budgets": [],
+      "property_test_command": "",
+      "benchmark_command": "",
+      "tolerance_report_command": "",
+      "mutation": "advisory",
+      "mutation_command": "",
+      "mutation_threshold": 80
+    },
     "visual_verify": {
       "mode": "required",
       "base_url": "http://localhost:3000",

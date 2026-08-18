@@ -110,3 +110,19 @@ Settings live under `.claude/settings.json` → `pipeline.visual_verify`:
 | `fail_on_console_error` | `true` | console errors fail the gate in `required` mode |
 
 Evidence is stored at `docs/superpowers/visual-evidence/<slug>/`.
+
+## Quant-verify gate (v0.6)
+
+For compute project classes (and any project declaring NFR proving commands), Phase 9c of `/feature`, `/improve`, `/fix` runs the **quantitative gate**: every NFR proving command from the feature's `docs/requirements/` file executes fresh per seed, with **pass^k** acceptance for deterministic oracles and an **anti-overclaim rule** (verdict `verified` only when every declared oracle actually ran — else `partial`). Evidence lands in `docs/superpowers/quant-evidence/<slug>/` (`summary.md` + `run-manifest.md` with commit SHA, seeds, platform, dependency versions, input hashes). Oracle taxonomy and tolerance rules: `docs-meta/NUMERICS_TESTING.md`.
+
+Settings live under `.claude/settings.json` → `pipeline.quant_verify`:
+
+| Field | Default | Meaning |
+|---|---|---|
+| `mode` | `by_class` | `by_class` resolves: compute classes → `required`, others → `skip`; explicit `required`/`best_effort`/`skip` wins |
+| `seeds` | `[0]` | seed set exported as `SEED` to every proving command; pass^k across all of them |
+| `budgets` | `[]` | global {name, command, threshold} checks run alongside NFR commands |
+| `property_test_command` / `benchmark_command` / `tolerance_report_command` | `""` | project-wide checks (empty = skip) |
+| `mutation` / `mutation_command` / `mutation_threshold` | `advisory` / `""` / `80` | `off` / `advisory` (survivors → Important findings) / `required` (score below threshold fails the gate; empty command with `required` → verdict `partial`) |
+
+`pipeline.project_class` (written by `/init`) drives the `by_class` resolution and the visual-gate default (compute classes and `cli` skip visual).

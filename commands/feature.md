@@ -31,6 +31,7 @@ Read in full:
 - `docs/features.md`
 - `docs/roadmap.md`
 - Every file under `.claude/lessons/`
+- `docs/model.md` (when it exists — compute classes): the mathematical ground truth this feature must respect (assumptions, invariants, accuracy targets)
 - `docs/glossary.md` (use its terms; a term used contrary to the glossary is a defect)
 - `docs/risks.md` — note every `open` risk whose scope plausibly matches this work
 - `docs/analysis/analogs.md` — what existing solutions prove right or wrong here
@@ -108,6 +109,7 @@ Inputs:
   - Spec: docs/superpowers/specs/<SLUG>.md  (schema: docs-meta/SPEC_FORMAT.md)
   - docs/architecture.md, docs/features.md, docs/roadmap.md, docs/risks.md
   - docs/glossary.md, docs/analysis/analogs.md
+  - docs/model.md (when it exists) and the project class: jq -r '.pipeline.project_class' .claude/settings.json
   - All files under .claude/lessons/
   - Original user request: "<$ARGUMENTS>"
 Slug: <SLUG>
@@ -162,7 +164,7 @@ Present the decision digest and WAIT for explicit approval. This gate runs at ev
 
 **Pre-condition:** the spec file must contain an `**Approved by user:**` line (written by Phase 3.5). If absent → STOP: the playback gate was skipped; return to Phase 3.5.
 
-Invoke `superpowers:writing-plans` on the spec at `docs/superpowers/specs/<SLUG>.md`. Save the plan to:
+Invoke `superpowers:writing-plans` on the spec at `docs/superpowers/specs/<SLUG>.md`. **For any task implementing numeric computation, the plan MUST name the oracle type (taxonomy: `docs-meta/NUMERICS_TESTING.md`) and the tolerance with its one-line justification** — a numerical task without a named oracle is an incomplete plan. Save the plan to:
 ```
 docs/superpowers/plans/<SLUG>.md
 ```
@@ -218,7 +220,8 @@ For each ready task:
 
 **Stop conditions:**
 - 3 failed RED→GREEN attempts on a single task → stop, surface to user
-- Test that should fail doesn't fail → stop (test is broken)
+- Test that should fail doesn't fail → stop (test is broken; for numeric changes use the feature-flag honest-RED protocol from `docs-meta/NUMERICS_TESTING.md`)
+- Tolerance chosen or loosened to make a test pass → stop (derive why the bound is correct, or treat it as a real bug — `docs-meta/NUMERICS_TESTING.md`)
 - Verification command fails → stop
 
 **After sign-off, open decisions do not stop the build:** a decision that surfaces mid-TDD is recorded in the spec as an Assumption plus a `TBC:` marker, the conservative option is taken, and gate-2 surfaces it (see `docs-meta/ELICITATION.md`, "Post-approval"). Exception: if it invalidates the approved digest (scope, interface, stated tolerance) → STOP and re-play Phase 3.5.
@@ -305,7 +308,7 @@ fi
 [ "$HAS_FRONTEND" = "yes" ] && echo "Frontend detected: $FRONTEND_RULE"
 ```
 
-If `HAS_FRONTEND=no` → skip directly to Phase 10.
+If `HAS_FRONTEND=no` → skip the visual sub-step and go directly to Phase 9c.
 
 **Read settings:**
 
@@ -317,7 +320,7 @@ TIMEOUT=$(jq -r '.pipeline.visual_verify.dev_port_timeout_sec // 60' .claude/set
 FAIL_CONSOLE=$(jq -r 'if .pipeline.visual_verify.fail_on_console_error == false then "false" else "true" end' .claude/settings.json 2>/dev/null || echo true)
 ```
 
-If `MODE=skip` → skip to Phase 10.
+If `MODE=skip` → skip the visual sub-step and go to Phase 9c.
 
 **Verify Playwright MCP is registered:**
 
@@ -328,7 +331,7 @@ claude mcp list 2>/dev/null | grep -q "^playwright:" || {
 }
 ```
 
-If `SKIP_VISUAL=yes` → skip to Phase 10.
+If `SKIP_VISUAL=yes` → skip the visual sub-step and go to Phase 9c.
 
 **Probe / start dev server (hybrid):**
 
@@ -369,7 +372,7 @@ else
 fi
 ```
 
-If `SKIP_VISUAL=yes` → skip to Phase 10.
+If `SKIP_VISUAL=yes` → skip the visual sub-step and go to Phase 9c.
 
 **Extract URLs from spec:**
 
@@ -481,9 +484,33 @@ trap - EXIT
 
 **Apply verdict:**
 
-- `VERDICT=PASS` → proceed to Phase 10.
+- `VERDICT=PASS` → proceed to Phase 9c.
 - `VERDICT=FAIL` and `MODE=required` → STOP. Print contents of `summary.md`. Do NOT merge.
-- `VERDICT=FAIL` and `MODE=best_effort` → warn, print summary, proceed to Phase 10.
+- `VERDICT=FAIL` and `MODE=best_effort` → warn, print summary, proceed to Phase 9c.
+
+### Phase 9c: Quantitative verification (compute classes / declared NFRs)
+
+**Resolve the mode** (statelessly, in this block):
+
+```bash
+QMODE=$(jq -r '.pipeline.quant_verify.mode // "by_class"' .claude/settings.json 2>/dev/null || echo by_class)
+PCLASS=$(jq -r '.pipeline.project_class // "unset"' .claude/settings.json 2>/dev/null || echo unset)
+if [ "$QMODE" = "by_class" ]; then
+  case "$PCLASS" in numerical-library|simulation|data-pipeline) QMODE=required ;; *) QMODE=skip ;; esac
+fi
+```
+
+If `QMODE=skip` AND no checks are declared anywhere (no NFR proving commands in the requirements file, all global commands empty) → skip to Phase 10. If `QMODE=skip` but checks ARE declared → run the gate in `best_effort` (warn, never stop). Otherwise:
+
+1. **Evidence dir:** `docs/superpowers/quant-evidence/<SLUG>/`.
+2. **Collect checks:** every NFR proving command from `docs/requirements/<F_ID>-<slug>.md`; every requirement whose `verify.method` is `Test` with a named `evidence` test id (run it via the project's test runner); for `Analysis`/`Inspection`/`Review` methods verify the evidence file exists (missing → that requirement counts as unexecuted → `partial`); plus `pipeline.quant_verify.{property_test_command, benchmark_command, tolerance_report_command, budgets}` where set. An NFR with no proving command — whether or not it declares `verify:` — → record as an **Important finding** in summary.md (not a block).
+3. **Run** each command fresh, once per seed in `pipeline.quant_verify.seeds` (export `SEED` to the command's environment; `seeds: []` → run each command exactly once without `SEED` exported); capture exit codes and outputs. **pass^k**: deterministic oracles pass only if ALL seeds pass; **pass@k** applies only to NFRs explicitly declared statistical — report both numbers.
+4. **Mutation sub-step** per `pipeline.quant_verify.mutation`: `off` → skip; `advisory` (default) → run `mutation_command` if set, surviving mutants become Important findings in summary.md; `required` → `mutation_command` MUST be set (empty command with `mutation: required` → verdict `partial`: a declared check that cannot execute), and a mutation score below `pipeline.quant_verify.mutation_threshold` FAILs the gate.
+5. **Code-link audit** (advisory): scan diffed source for `@relation(F-*/FR-*)` markers; for every requirement `code:` entry, recompute the symbol-body sha256 — mismatch → mark the link **suspect** in summary.md; public numerical functions in the diff with no marker, and requirements with no linked code/test → coverage notes.
+6. **Write evidence:** `run-manifest.md` (commit SHA, seed set, platform, dependency versions, input-data hashes) and `summary.md` (per-check table, pass^k / pass@k, advisory findings, verdict).
+7. **Verdict — anti-overclaim rule:** `verified` ONLY if every declared oracle/proving command was actually executed and passed for all required seeds; any declared-but-unexecuted check → `partial` (list what did not run); any failed check → `failed`. **Zero collected checks in `required` mode → `partial`, never `verified`** — an empty manifest proves nothing (record "no checks declared" as an Important finding).
+
+**Apply:** `verified` → Phase 10. `partial`/`failed` + `QMODE=required` → STOP, print summary.md, do NOT merge; ask `address / override`: `address` → `bd create` a task per failed/unexecuted check, loop back to Phase 7, then re-run Phase 8 (the critic now reads the fresh quant evidence) and Phase 9. `override` → written reason + `docs/risks.md` row, same protocol as the critic gates. `partial`/`failed` + `best_effort` → warn, proceed. A PASS without a run-manifest does not count as `verified`.
 
 ---
 
@@ -580,6 +607,8 @@ Next: /feature "<next thing>" or git push (manual).
 | Critic gate-2 Critical, user `address` | Add tasks, re-loop TDD; max 2 cycles |
 | TDD attempt loop > 3 | Stop, surface |
 | Verify command non-zero | Stop, surface |
+| Visual gate (9b) FAIL, mode=required | Stop, print summary.md, do NOT merge |
+| Quant gate (9c) partial/failed, mode=required | Stop, ask address/override; address → bd tasks per failed check → Phase 7 → re-run Phase 8 with fresh quant evidence |
 | Merge conflict | Stop, surface, do NOT auto-resolve |
 | `gh` not installed when `pr` mode | Fall back to `merge` mode, warn user |
 

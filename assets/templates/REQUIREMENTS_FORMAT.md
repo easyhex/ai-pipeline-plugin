@@ -27,6 +27,8 @@ mid: <uuid — write once, NEVER edit; survives renames and renumbering>
 status: active | changed | removed
 Acceptance (EARS): When <trigger>, the <system> SHALL <response>.
 Source: spec <slug> — User decisions #N | assumption (confirmed at playback YYYY-MM-DD)
+verify: {method: Test | Analysis | Inspection | Review, oracle: <NUMERICS_TESTING taxonomy type or —>, evidence: <test id / doc path>}
+code: {path: <file>, symbol: <function/class>, sha256: <of the symbol body>, verified_at: YYYY-MM-DD}   ← optional link
 
 ## Non-functional requirements
 
@@ -40,6 +42,14 @@ Threshold: <value WITH units, against what> · Proving command: <cmd> · Counter
 |---|---|---|---|
 | YYYY-MM-DD | FR-01 (<mid>) | created | spec <slug> |
 ```
+
+## Verification method (v0.6)
+
+`verify.method` — `Test | Analysis | Inspection | Review` — is **mandatory for compute project classes** (optional elsewhere): not everything is provable by test (algorithm stability is `Analysis` with a committed derivation; an architectural property is `Review`). Method-specific evidence obligations: `Test` → oracle type + test id; `Analysis` → path to the committed derivation doc; `Inspection`/`Review` → report link. The quant-verify gate refuses `verified` for a requirement whose declared evidence was not exercised.
+
+## Code links (v0.6)
+
+Numerical-kernel code carries docstring markers `@relation(F-NNN/FR-NN)`; the requirement's optional `code:` entry stores the symbol and a `sha256` of its body. The quant-verify gate recomputes hashes: a mismatch means the code changed since the requirement was last verified — the link becomes **suspect** (an Important finding to re-verify, never a silent pass and not a hard block). Coverage both ways: a public numerical function with no `@relation` marker, or a requirement with no linked code/test, is an advisory finding.
 
 **mid rules:** generate with `uuidgen | tr A-F a-f` (or `python3 -c 'import uuid;print(uuid.uuid4().hex)'`); written once at creation; when a requirement is reworded or renumbered, the mid stays; when it is split, the closest descendant keeps the mid and the rest get new ones. `/release` diffs requirement files between tags BY MID to generate the "requirements changed" changelog section — editing a mid destroys that history.
 

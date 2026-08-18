@@ -156,7 +156,7 @@ Resolve the plugin templates directory now (same procedure as Phase 3) and read 
 
 **Round 1 (always):**
 - ❓ Stakes: hobby / internal tool / production launch — with a ➡️ recommendation inferred from `$ARGUMENTS`. Maps to the default ceremony weight (hobby→`light`, internal→`standard`, launch→`deep`); Phase 3 writes it into `.claude/settings.json` → `pipeline.default_weight`, and `/feature`'s weight question recommends it.
-- ❓ Coverage-tree variant for future interviews: generic / numerics (see `ELICITATION_TREES.md` in the plugin templates) — ➡️ recommend from `$ARGUMENTS`.
+- ❓ Project class: numerical-library / simulation / data-pipeline / service / ui-app / cli — ➡️ recommend from `$ARGUMENTS`. Written to `.claude/settings.json` → `pipeline.project_class`; sets gate defaults (compute classes and `cli`: `visual_verify.mode: skip`; compute classes: quant gate required; ui-app: visual required) and the coverage-tree variant recommendation (compute → numerics, else generic; see `ELICITATION_TREES.md`).
 - ❓ Primary user of the app (who, and what they do with it).
 - ❓ Tech stack — recommend one from `$ARGUMENTS` context; free-text welcome (a math-heavy system may be NumPy/SciPy/JAX, Fortran-interop, GPU — never force a web framework).
 
@@ -214,6 +214,7 @@ cp "$TEMPLATE_DIR/LESSON_FORMAT.md"   ./docs-meta/LESSON_FORMAT.md
 cp "$TEMPLATE_DIR/ELICITATION.md"        ./docs-meta/ELICITATION.md
 cp "$TEMPLATE_DIR/ELICITATION_TREES.md"  ./docs-meta/ELICITATION_TREES.md
 cp "$TEMPLATE_DIR/SPEC_FORMAT.md"        ./docs-meta/SPEC_FORMAT.md
+cp "$TEMPLATE_DIR/NUMERICS_TESTING.md"   ./docs-meta/NUMERICS_TESTING.md
 cp "$TEMPLATE_DIR/REQUIREMENTS_FORMAT.md" ./docs-meta/REQUIREMENTS_FORMAT.md
 cp "$TEMPLATE_DIR/ADR_FORMAT.md"         ./docs-meta/ADR_FORMAT.md
 cp "$TEMPLATE_DIR/risks.md"              ./docs/risks.md
@@ -223,11 +224,20 @@ cp "$TEMPLATE_DIR/gitignore"          ./.gitignore       # rename: no leading do
 cp "$TEMPLATE_DIR/settings.json"      ./.claude/settings.json
 ```
 
-Write the interview's stakes answer into settings (default `standard` if the user skipped it):
+Write the interview's stakes + class answers into settings (defaults: `standard`, `unset`):
 
 ```bash
-# WEIGHT is light|standard|deep from the Round 1 stakes answer
-jq --arg w "$WEIGHT" '.pipeline.default_weight = $w' .claude/settings.json > /tmp/s.json && mv /tmp/s.json .claude/settings.json
+# WEIGHT: light|standard|deep (Round 1 stakes); PCLASS: numerical-library|simulation|data-pipeline|service|ui-app|cli
+jq --arg w "$WEIGHT" --arg c "$PCLASS" \
+  '.pipeline.default_weight = $w | .pipeline.project_class = $c
+   | (if ($c | IN("numerical-library","simulation","data-pipeline","cli")) then .pipeline.visual_verify.mode = "skip" else . end)' \
+  .claude/settings.json > /tmp/s.json && mv /tmp/s.json .claude/settings.json
+```
+
+For compute classes (numerical-library / simulation / data-pipeline), additionally copy the mathematical-model template:
+
+```bash
+cp "$TEMPLATE_DIR/model.md" ./docs/model.md
 ```
 
 Verify all files copied:
@@ -269,6 +279,8 @@ Use the description (`$ARGUMENTS`) and the confirmed interview answers to popula
    - Explicitly NOT doing: entries from the user's OWN negative-scope answers (Round 2); machine-added entries carry `(proposed — unconfirmed)`
 
 4. **`docs/glossary.md`** — seed one row per domain term/symbol the interview surfaced (with units where numeric). Empty is acceptable only if the interview surfaced none.
+
+4b. **`docs/model.md`** (compute classes only) — fill §1-6 from the interview's NFR round: problem statement, assumptions, invariants (these seed the property oracles), units, accuracy targets with their oracles, known failure regimes. Open items become `TBC:` markers.
 
 5. **`docs/analysis/analogs.md`** (optional fill — D4): ask one ❓ in the conversation's language — "Fill the analog analysis now via web search (a few minutes)?" — ➡️ recommend `yes` for internal/launch stakes, `skip` for hobby. On yes: WebSearch for existing solutions to `$ARGUMENTS`, fill 2-5 rows (what to copy / what to avoid, sources, today's date in Checked); machine-filled rows are proposals — they go through the Phase 4.5 confirmation like everything else. On skip: leave the template's empty state; `/plan-improve` fills later.
 

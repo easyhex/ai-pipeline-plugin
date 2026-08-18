@@ -18,6 +18,7 @@ You receive:
 - The spec file (path provided in your prompt; schema: `docs-meta/SPEC_FORMAT.md` — read the spec's `weight:` frontmatter, it scopes the EARS check)
 - `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, `docs/risks.md`
 - `docs/glossary.md`, `docs/analysis/analogs.md`
+- `docs/model.md` (when it exists) and the project class (`jq -r '.pipeline.project_class' .claude/settings.json` — "compute-class" means numerical-library / simulation / data-pipeline)
 - All files under `.claude/lessons/`
 - The original user request that started the pipeline
 
@@ -30,19 +31,28 @@ Look for:
 - Analog blindness: the spec reinvents something `docs/analysis/analogs.md` marked "avoid", or ignores a "copy" row that directly applies → **Important**
 - Glossary drift: a term used contrary to its `docs/glossary.md` line → **Important**
 - Open risks: any `open` row of `docs/risks.md` whose scope matches this spec — cite the R-ID and say whether this work triggers its review-by condition
-- Conflicts with the Master Plan (architecture violations, conflicts with shipped features, items not in roadmap)
+- Conflicts with the Master Plan (architecture violations, conflicts with shipped features, items not in roadmap; for compute classes also `docs/model.md` — assumptions and invariants)
+- Numerical review (when the spec touches numeric computation):
+  - Compute-class spec lacks `## Mathematical approach` or `## Interface contracts` → **Critical**
+  - A numerical behavior with no declared oracle type (taxonomy: `docs-meta/NUMERICS_TESTING.md`) → **Critical**
+  - Tolerance without a one-line justification, or without units/reference (abs/rel, against what) → **Important**
+  - Algorithm named with no stability/complexity suitability sentence → **Important**
+  - Numerical FR without at least one property/metamorphic relation → **Important**
 - Lesson violations (any lesson whose `trigger:` matches this spec's domain)
 - Test plan gaps (what behaviors are claimed but not tested?)
 
 ### Gate 2: post-implementation (reviewing a diff)
 
+**Input order discipline:** read the DIFF first and complete the claims-check quarantine stage 1 (trace the numerical paths of the change with your own eyes) BEFORE opening the spec or any document that describes what the change is supposed to do. Only then load the rest.
+
 You receive:
-- The base branch and the head branch (run `git diff base..head` to see the change)
-- The spec it was built from
+- The base branch and the head branch (run `git diff base..head` to see the change) — **read first**
+- The spec it was built from — **only after the stage-1 trace**
 - The feature's living requirements file under `docs/requirements/` (when one exists — /fix runs have none)
 - `docs/architecture.md`, `docs/features.md`, `docs/risks.md`
 - All files under `.claude/lessons/`
 - **Visual evidence (if exists):** `docs/superpowers/visual-evidence/<slug>/summary.md` and the `snapshots/` text files. Do NOT open PNGs — those are for the human reviewer.
+- **Quant evidence (if exists):** `docs/superpowers/quant-evidence/<slug>/summary.md` and `run-manifest.md` — a `verified` verdict without a run-manifest, or with declared oracles listed as unexecuted, is itself a finding (**Important**).
 
 Look for:
 - Behaviors claimed in the spec but missing in the code or tests
@@ -51,7 +61,17 @@ Look for:
 - Lesson violations (cite the lesson filename)
 - Requirements drift: the diff implements behavior not present in the feature's `docs/requirements/` file, or an FR/NFR there has no corresponding code/test in the diff — name the FR/NFR ids
 - Open risks (`docs/risks.md`): re-flag any open row whose scope this diff touches; if the diff triggers a review-by condition, flag as **Important**
-- Tests that pass but don't actually exercise the claimed behavior (assertion-on-self, mocked the thing under test, etc.)
+- Tests that pass but don't actually exercise the claimed behavior (assertion-on-self, mocked the thing under test, a tolerance so loose the test proves nothing — "tolerance fraud")
+- **Numerical correctness (when the diff touches numeric code):**
+  - Exact float equality in a test, outside a stated bit-exactness NFR → **Critical**
+  - New solver/algorithm with no property, convergence, or reference-oracle test → **Critical**
+  - Tolerance chosen or loosened with no stated justification → **Important**
+  - Stochastic test without a pinned seed → **Important**
+  - Missing NaN/Inf/domain-boundary handling at public API boundaries → **Important**
+  - Unjustified change in accumulation/summation order → **Important**
+- **Claims-check quarantine (stage 2 — stage 1 already happened per the input-order discipline above):** now load the spec's claimed invariants and tolerances and compare them to the trace you made before reading it. The spec is the change's account of itself: testimony, not evidence.
+- **Verification-gap lens:** for each behavior the diff changes, ask "if this broke, which check fails?" — changed behavior protected by no effective check → **Important**
+- **Verifier-sabotage check:** compare every diff to test files, tolerances, seeds, and fixtures against the task's stated intent; weakening a tolerance, deleting a test, or changing a seed so a gate passes → **Critical**
 - Architecture drift (new dependencies not justified, boundaries crossed, modules now too large)
 - **Visual drift (if visual-evidence/<slug>/summary.md exists):**
   - URLs declared in spec's `## URLs to verify` but not visited (per `summary.md`'s `URLs visited` line) — flag as **Important**.

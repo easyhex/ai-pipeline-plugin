@@ -33,6 +33,7 @@ The user request maps to one or more of these change types:
 - **E** — adding/removing a hard constraint
 - **F** — retiring or updating a `docs/risks.md` row (move Open → Retired with resolution)
 - **G** — updating `docs/analysis/analogs.md` or `docs/glossary.md`
+- **H** — updating `docs/model.md` (mathematical model, invariants, accuracy targets — compute classes)
 
 Identify which type(s). If unclear, put the question to the user in the frontier-round format (❓ + ➡️ recommended answer).
 
@@ -77,19 +78,21 @@ Edit the affected `docs/*.md` files with the changes from Phase 4 (modified per 
 
 While applying: remove the `(proposed — unconfirmed)` suffix from any Master Plan line the user confirms or reworks in this run — this is the command that clears the tags `/init` leaves on unreviewed machine proposals.
 
-In every versioned doc modified (`architecture.md`, `features.md`, `roadmap.md`, `risks.md`, and on type-G changes `glossary.md` / `analogs.md`): bump `doc_version` by 1, set `last_changed`, and append a `## Change history` row (date | version | one-line change | critic report path).
+In every versioned doc modified (`architecture.md`, `features.md`, `roadmap.md`, `risks.md`, type-G `glossary.md` / `analogs.md`, type-H `model.md`): bump `doc_version` by 1, set `last_changed`, and append a `## Change history` row (date | version | one-line change | critic report path).
 
 Verify the soft size budgets are not exceeded:
 - `architecture.md` ≤ 300 lines
 - `features.md` ≤ 500 lines
 - `roadmap.md` ≤ 200 lines
+- `risks.md` ≤ 150 lines
+- `model.md` ≤ 250 lines
 
 If exceeded, warn the user and suggest splitting (don't auto-split).
 
 ## Phase 7: Commit
 
 ```bash
-git add docs/architecture.md docs/features.md docs/roadmap.md docs/risks.md docs/glossary.md docs/analysis/analogs.md 2>/dev/null
+git add docs/architecture.md docs/features.md docs/roadmap.md docs/risks.md docs/glossary.md docs/analysis/analogs.md docs/model.md 2>/dev/null
 git commit -m "docs: plan-improve — <one-line summary of change>
 
 Critic report: <path-to-report>"

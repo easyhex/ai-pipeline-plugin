@@ -88,7 +88,7 @@ Same as `/feature` Phase 8, except the inputs: /fix runs have no F_ID and no `do
 
 ## Phase 7: Verify
 
-Same as `/feature` Phase 9 (including the visual sub-step 9b for frontend projects). No SPEC_FILE handoff is needed: Phase 9b's URL-extraction step resolves its spec file statelessly and prefers `docs/superpowers/specs/<SLUG>-diagnosis.md` when it exists — this command's diagnosis file (with its `## URLs to verify` section) is picked up automatically.
+Same as `/feature` Phase 9 (including the visual sub-step 9b for frontend projects, and the 9c quant gate — **delta:** when Phase 1 identified the feature this bug touches, 9c runs that feature's `docs/requirements/` NFR proving commands; when no feature is identifiable, 9c runs only the global `pipeline.quant_verify` commands in `best_effort` with a one-line note). No SPEC_FILE handoff is needed: Phase 9b's URL-extraction step resolves its spec file statelessly and prefers `docs/superpowers/specs/<SLUG>-diagnosis.md` when it exists — this command's diagnosis file (with its `## URLs to verify` section) is picked up automatically.
 
 Plus: explicitly run the test from Phase 2 to prove the bug is fixed.
 
