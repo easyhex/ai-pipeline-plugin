@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "ai_pipeline_plugin",
+  "project_id": "47110273-287f-4921-be17-6b0d200ef996"
+}
