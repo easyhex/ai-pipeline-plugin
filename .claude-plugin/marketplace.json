@@ -1,13 +1,13 @@
 {
   "name": "ai-pipeline-marketplace",
-  "description": "AI development pipeline plugin: 6 commands, automatic critic, lessons-learned flywheel.",
+  "description": "AI development pipeline plugin: slash-command pipeline, automatic critic, lessons-learned flywheel.",
   "owner": { "name": "easyhex" },
   "plugins": [
     {
       "name": "ai-pipeline",
       "source": "./",
       "description": "7-command AI development pipeline with auto-critic, lessons, Serena memory, and Playwright-MCP visual gate.",
-      "version": "0.3.0"
+      "version": "0.3.1"
     }
   ]
 }

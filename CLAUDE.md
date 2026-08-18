@@ -5,7 +5,7 @@ This file applies to anyone (human or AI agent) editing this **plugin repo**. It
 ## Before any change
 
 1. Understand the layered structure:
-   - `commands/` — 6 slash commands, auto-loaded
+   - `commands/` — slash commands, auto-loaded (the command inventory lives in `assets/templates/PIPELINE.md` — do not restate counts here)
    - `agents/` — `senior-critic` subagent, auto-loaded
    - `assets/templates/` — files `/init` writes into user projects (do not auto-load)
    - `.claude-plugin/` — plugin manifest + marketplace entry
@@ -34,7 +34,7 @@ cd /tmp/ai-pipeline-smoke-$$
 claude
 > /init "test app"
 # Verify:
-> /help            # confirm 6 commands appear
+> /help            # confirm every command from assets/templates/PIPELINE.md appears
 > ls               # confirm CLAUDE.md, docs/, docs-meta/, .claude/, .gitignore present
 ```
 

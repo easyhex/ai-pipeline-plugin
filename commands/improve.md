@@ -45,7 +45,7 @@ Then proceed with the standard ground steps (architecture.md, lessons, Context7)
 
 ## Phases 2-12: Same as `/feature.md`
 
-All other phases run identically to `/feature`. Reference `.claude/commands/feature.md` for the full text — do not duplicate it here.
+All other phases run identically to `/feature`. Reference the `ai-pipeline:feature` command text for the full phase definitions (it ships with this plugin and is loaded alongside this command — it is NOT a file in the user's project). Do not duplicate it here.
 
 **Differences in specific phases:**
 
