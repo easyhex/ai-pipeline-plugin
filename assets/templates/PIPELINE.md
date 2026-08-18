@@ -48,6 +48,7 @@ Cut a product release: proposes the next semver from shipped-since-last-tag feat
 | 8 | critic-2 | Senior-critic reviews the cumulative diff. + auto-write suggested memories. | `senior-critic` subagent (ships with the ai-pipeline plugin) |
 | 9 | verify | Runs proving commands, reads exit codes | `superpowers:verification-before-completion` |
 | 9b | visual-verify (frontend only) | Drives Playwright MCP across spec's `## URLs to verify`, captures screenshot + a11y snapshot + console; verdict in `docs/superpowers/visual-evidence/<slug>/summary.md` | inline in command file |
+| 9c | quant-verify (compute classes / declared NFRs) | Runs every NFR proving command per seed (`pipeline.quant_verify`, pass^k for deterministic oracles), mutation sub-step, @relation/hash link audit; verdict `verified`/`partial`/`failed` (anti-overclaim: unexecuted oracle → `partial`) + `run-manifest.md` in `docs/superpowers/quant-evidence/<slug>/` | inline in command file (canonical; `/improve`/`/fix` carry deltas) |
 | 10 | finish | Merges to main OR opens PR (per `pipeline.finish_mode` in settings.json) | `superpowers:finishing-a-development-branch` |
 | 11 | master-plan-update | Moves feature in `docs/features.md` to "Shipped"; flips the requirements file to `shipped`; appends the `docs/TRACEABILITY.md` row (F-ID → spec → plan → gates → evidence → merge SHA) | inline in command file |
 

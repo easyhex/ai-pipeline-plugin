@@ -51,6 +51,7 @@ rm -rf /tmp/ai-pipeline-smoke-*
 - Tag every release: `git tag v<version> && git push origin v<version>`
 - v0.2.0 adds Serena memory integration; new prereq is `uv` + `serena-agent` (auto-installed by `/init`)
 - v0.3.0 adds Playwright-MCP visual-verify gate for frontend projects; new prereq is `npx @playwright/mcp@latest` registered as MCP server (auto-registered by `/init` if `npx` is available)
+- v0.6.0 adds the math layer: project classes, docs/model.md, NUMERICS_TESTING oracle taxonomy, Phase 9c quant-verify (canonical only in feature.md — /improve and /fix carry deltas, same pattern as 9b), numeric critic duties, verify-method enum + @relation/hash code links. No new prereqs.
 - v0.5.0 adds the requirements layer: SPEC_FORMAT (EARS grammar) + living requirement files with mid identity, TRACEABILITY, risk register (gate overrides append), analogs + glossary, ADRs ([decision]-marked critic suggestions), versioned Master Plan docs, and `/release` (CHANGELOG + mid-diff + local tag). No new prereqs.
 - v0.4.0 adds the elicitation layer: `docs-meta/ELICITATION.md` primitive (frontier rounds, facts-vs-decisions, question hygiene), the Phase 3.5 spec playback gate, spec provenance sections, ceremony weight, `/init` interview + line-by-line confirm, and the `/questionnaire` command. No new prereqs.
 
