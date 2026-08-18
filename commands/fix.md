@@ -82,7 +82,13 @@ Same as `/feature` Phase 8.
 
 ## Phase 7: Verify
 
-Same as `/feature` Phase 9 (including the visual sub-step 9b for frontend projects). Plus: explicitly run the test from Phase 2 to prove the bug is fixed.
+Same as `/feature` Phase 9 (including the visual sub-step 9b for frontend projects). Before running 9b, set the spec path to this command's diagnosis file so URL extraction reads the right document:
+
+```bash
+SPEC_FILE="docs/superpowers/specs/<SLUG>-diagnosis.md"
+```
+
+Plus: explicitly run the test from Phase 2 to prove the bug is fixed.
 
 If this bug touches UI behavior, the spec at `docs/superpowers/specs/<SLUG>-diagnosis.md` should include a `## URLs to verify` section listing the page(s) where the bug manifested. The visual sub-step will catch unfixed regressions even if the unit test passes.
 

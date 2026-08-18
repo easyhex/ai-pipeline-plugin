@@ -91,6 +91,8 @@ For frontend projects, Phase 9 of `/feature`, `/improve`, `/fix` runs a **visual
 - empty/blank screenshots
 - missing Playwright MCP / dev server
 
+**Frontend detection:** the gate runs when `package.json` declares a framework dependency (react/vue/svelte/next/…), or when a root `index.html` exists **alongside** `package.json`. A bare `index.html` in a compute-only repo (WASM demo, docs page) does not trigger the gate.
+
 Settings live under `.claude/settings.json` → `pipeline.visual_verify`:
 
 | Field | Default | Meaning |
