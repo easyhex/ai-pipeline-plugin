@@ -21,7 +21,8 @@ argument-hint: "<bug description>"
 Read:
 - `docs/architecture.md`
 - `docs/features.md` (which feature does this bug touch?)
-- `.claude/lessons/` — pay extra attention; this bug may already have a lesson that was ignored.
+- `docs-meta/DISTILLED.md` (if it exists) FIRST — compiled lesson rules; then the raw lessons newer than `docs-meta/.lesson-cursor` AND every lesson whose trigger plausibly matches this bug (a bug hunt reads wider than a build) — this bug may already have a lesson that was ignored.
+- `docs/analysis/out-of-scope.md` — the "fix" must not resurrect a recorded refusal.
 
 If a lesson's `trigger:` matches this bug, surface it immediately to the user: "Lesson `<filename>` warned about this. Either the lesson wasn't applied or its `prevention:` is incomplete. Updating it may be appropriate after the fix."
 

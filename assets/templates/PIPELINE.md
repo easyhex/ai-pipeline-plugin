@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 10-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 12-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 10 user-facing commands
+## The 12 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, seeds `docs/glossary.md` and installs `docs/risks.md` + `docs/analysis/analogs.md` (optional web-search fill), confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
@@ -20,7 +20,7 @@ Same pipeline as `/feature`, but the ground phase emphasizes finding the existin
 Same pipeline shape, but uses systematic-debugging instead of brainstorming, and ends by writing a lesson file to `.claude/lessons/` so the same bug never costs twice.
 
 ### `/lesson`
-Manually record a lesson learned. Prompts for trigger / symptom / root_cause / prevention. Rarely needed — `/fix` writes lessons automatically.
+Manually record a lesson learned (trigger / symptom / root_cause / prevention). Rarely needed — `/fix` writes lessons automatically. **`/lesson distill`** compiles the lesson pile: clusters recurring patterns into `docs-meta/DISTILLED.md` rules (every processed lesson lands in a rule or the un-clustered list), advances `docs-meta/.lesson-cursor`; ground phases then read the compiled rules first and only the undistilled tail raw.
 
 ### `/remember "<fact>"`
 Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__serena__write_memory`. Used rarely — most memories come automatically from senior-critic at gate-2.
@@ -31,6 +31,12 @@ Generate a requirements questionnaire for someone else's head (client, domain ex
 ### `/resume [slug]`
 Continue an interrupted pipeline run. Derives the true position from artifact existence (spec → approval line → plan → beads tasks → gate reports → evidence → merge) and reconciles it with the `docs/superpowers/runs/current.json` cache — files win over the cache. Never re-mints an F-ID; never re-runs an approved playback.
 
+### `/validate [feature]`
+Falsify shipped guesses against reality: re-runs machine-checkable success criteria itself, asks for outcome evidence per criterion (frontier format, "I don't know" keeps it unchecked), records met/missed with evidence into the requirements files, and routes missed criteria as a reprioritization proposal to `/plan-improve`. Features shipped without criteria are listed as "unfalsifiable".
+
+### `/deprecate "<feature>"`
+The non-additive path: impact scan (traceability + supersedes chains + @relation call sites), deep-weight playback over the impact list, a committed migration plan, code removal via the standard TDD loop with the gate-2 critic told the break is INTENDED (it reviews the migration, not the regression), `BREAKING` change-history rows that make the next `/release` a major bump.
+
 ### `/release`
 Cut a product release: proposes the next semver from shipped-since-last-tag features (confirmed by one ❓), writes a human-register `CHANGELOG.md` from spec Goals (never from commit messages) including a mid-based "requirements changed since last release" section, stamps `in vX.Y.Z` into `docs/features.md`, commits and tags locally. Never pushes.
 
@@ -40,7 +46,7 @@ Cut a product release: proposes the next semver from shipped-since-last-tag feat
 
 | # | Phase | What it does | Implemented by |
 |---|---|---|---|
-| 1 | ground | Reads the four Master Plan files + `docs/glossary.md`, `docs/analysis/analogs.md`, relevant `docs/requirements/F-*.md`, answered questionnaires, all `.claude/lessons/*.md`. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
+| 1 | ground | Reads the four Master Plan files + `docs/glossary.md`, `docs/analysis/analogs.md`, `docs/analysis/out-of-scope.md`, relevant `docs/requirements/F-*.md`, answered questionnaires, `docs-meta/DISTILLED.md` first + the undistilled lesson tail. Detects libraries from package manifests, queries Context7. + load matching memories (Serena). | inline in command file |
 | 2 | brainstorm | Generates spec → saves to `docs/superpowers/specs/YYYY-MM-DD-<slug>.md` | `superpowers:brainstorming` |
 | 3 | critic-1 | Senior-critic reviews the spec | `senior-critic` subagent (ships with the ai-pipeline plugin) |
 | 3.5 | playback gate | The single blocking stop: decision digest (request verbatim / decisions / assumptions / out of scope / seams / open markers) → explicit user approval, recorded in the spec. On approval: F-ID minted + living requirements file created (`docs/requirements/`, per REQUIREMENTS_FORMAT.md, mid uuids). The original request authorizes planning only. | inline in command file |
@@ -108,7 +114,7 @@ Abandoning a run: delete `docs/superpowers/runs/current.json` — all hooks stan
 
 - Storage: `.claude/lessons/YYYY-MM-DD-<slug>.md`
 - Schema: `docs-meta/LESSON_FORMAT.md`
-- Loading: every internal phase reads them; critic cites them
+- Loading: ground reads `docs-meta/DISTILLED.md` (compiled rules) first, then the undistilled tail past `docs-meta/.lesson-cursor`; both critic gates and `/fix` still read every lesson; critic cites them
 - Creation: `/fix` writes one automatically; `/lesson` writes one manually
 - Pruning: manual only; never auto-delete
 

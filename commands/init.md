@@ -220,6 +220,7 @@ cp "$TEMPLATE_DIR/ADR_FORMAT.md"         ./docs-meta/ADR_FORMAT.md
 cp "$TEMPLATE_DIR/risks.md"              ./docs/risks.md
 cp "$TEMPLATE_DIR/glossary.md"           ./docs/glossary.md
 cp "$TEMPLATE_DIR/analogs.md"            ./docs/analysis/analogs.md
+cp "$TEMPLATE_DIR/out-of-scope.md"       ./docs/analysis/out-of-scope.md
 cp "$TEMPLATE_DIR/gitignore"          ./.gitignore       # rename: no leading dot in source
 cp "$TEMPLATE_DIR/settings.json"      ./.claude/settings.json
 ```
@@ -243,7 +244,7 @@ cp "$TEMPLATE_DIR/model.md" ./docs/model.md
 Verify all files copied:
 ```bash
 for f in CLAUDE.md docs/architecture.md docs/features.md docs/roadmap.md \
-         docs/risks.md docs/glossary.md docs/analysis/analogs.md \
+         docs/risks.md docs/glossary.md docs/analysis/analogs.md docs/analysis/out-of-scope.md \
          docs-meta/PIPELINE.md docs-meta/LESSON_FORMAT.md docs-meta/ELICITATION.md docs-meta/ELICITATION_TREES.md \
          docs-meta/SPEC_FORMAT.md docs-meta/REQUIREMENTS_FORMAT.md docs-meta/ADR_FORMAT.md \
          .gitignore .claude/settings.json; do

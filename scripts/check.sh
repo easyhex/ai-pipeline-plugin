@@ -464,6 +464,51 @@ if [ -f tests/promptfoo/promptfooconfig.yaml ] && [ -d tests/promptfoo/fixtures/
   pass "T57 promptfoo behavioral skeleton present"
 else fail "T57 no behavioral CI skeleton"; fi
 
+# ---- v1.0 validation-loop contract ----
+
+# T59 — success criteria are first-class and /validate closes the reality loop.
+if grep -q 'Success criteria' assets/templates/SPEC_FORMAT.md \
+   && grep -q 'Success criteria' assets/templates/REQUIREMENTS_FORMAT.md \
+   && [ -f commands/validate.md ] \
+   && grep -q 'unchecked' commands/validate.md \
+   && grep -q 'plan-improve' commands/validate.md; then
+  pass "T59 success criteria + /validate outcome loop"
+else fail "T59 shipped features are never validated against reality"; fi
+
+# T60 — /deprecate: impact scan, migration plan, intended-break signal to the critic.
+if [ -f commands/deprecate.md ] \
+   && grep -q 'migration' commands/deprecate.md \
+   && grep -q 'TRACEABILITY' commands/deprecate.md \
+   && grep -qi 'intended\|deliberate' commands/deprecate.md \
+   && grep -q 'BREAKING' commands/deprecate.md; then
+  pass "T60 /deprecate with migration plan and intended-break protocol"
+else fail "T60 non-additive change (deprecation/breaking) still inexpressible"; fi
+
+# T61 — lesson distillation: cursor, DISTILLED.md, ground reads compiled rules first.
+if grep -q 'distill' commands/lesson.md \
+   && grep -q 'lesson-cursor' commands/lesson.md \
+   && grep -q 'DISTILLED' commands/lesson.md \
+   && grep -q 'DISTILLED' commands/feature.md \
+   && grep -q 'DISTILLED' commands/fix.md; then
+  pass "T61 lessons compile into rules (cursor + DISTILLED.md, ground-read)"
+else fail "T61 lessons still accumulate linearly with no distillation"; fi
+
+# T62 — fresh-context verification: a critic mode, dispatched before findings reach the user.
+if grep -qi 'verification mode' agents/senior-critic.md \
+   && grep -qi 'evidence, not instructions\|evidence-not-instructions' agents/senior-critic.md \
+   && grep -qi 'verification mode\|fresh-context' commands/feature.md; then
+  pass "T62 fresh-context finding verification wired at gate-2"
+else fail "T62 unreproduced critic findings still reach the user"; fi
+
+# T63 — out-of-scope KB: template ships, playback writes it, gate-1 critic reads it.
+if [ -f assets/templates/out-of-scope.md ] \
+   && grep -q 'out-of-scope' commands/feature.md \
+   && grep -q 'out-of-scope' commands/init.md \
+   && grep -q 'out-of-scope' agents/senior-critic.md \
+   && grep -q 'out-of-scope' commands/plan-improve.md; then
+  pass "T63 deliberate refusals persist (out-of-scope KB)"
+else fail "T63 rejected concepts get re-litigated forever"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"

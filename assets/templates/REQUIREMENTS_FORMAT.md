@@ -37,6 +37,13 @@ mid: <uuid>
 status: active
 Threshold: <value WITH units, against what> · Proving command: <cmd> · Counter-metric: <must not degrade>
 
+## Success criteria
+| # | Criterion (with check-by) | Status | Evidence | Checked |
+|---|---|---|---|---|
+| SC-1 | <from the approved spec> | unchecked \| met \| missed | <one line> | YYYY-MM-DD |
+
+`/validate` owns the Status/Evidence columns; `missed` rows route a reprioritization proposal to `/plan-improve`.
+
 ## Change history
 | Date | Requirement (mid) | Change | Source |
 |---|---|---|---|
