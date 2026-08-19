@@ -1,0 +1,3 @@
+/deprecate is the only run type whose approval lives in `docs/superpowers/plans/<slug>-migration.md` (no spec file, no minted requirements file — the migration plan IS the spec-equivalent and its `**Approved by user:**` line satisfies the 3.5 derivation row). Every position-deriving consumer (/resume, hooks, future tooling) must special-case it; /resume's derivation table does since v1.0.0.
+
+Captured by senior-critic at gate-2 of feature/v1.0-validation on 2026-08-20 (the gap would have re-run an approved playback).
