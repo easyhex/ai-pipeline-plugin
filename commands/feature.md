@@ -19,7 +19,14 @@ argument-hint: "<feature description>"
    - Format: `YYYY-MM-DD-<slug>` (use today's date)
    - Save as `$SLUG` for use in filenames throughout
 
-3. **Announce intent:**
+3. **Run-state:** if `docs/superpowers/runs/current.json` exists → STOP: "run '<its slug>' is in flight — `/resume` it or delete the file to abandon." Otherwise create it:
+   ```bash
+   mkdir -p docs/superpowers/runs
+   printf '{"slug":"<SLUG>","phase":"1","started":"%s"}\n' "$(date -Iseconds 2>/dev/null || date)" > docs/superpowers/runs/current.json
+   ```
+   Update `.phase` and `.updated` (ISO date) at EVERY phase boundary (`jq '.phase="<N>"' … > tmp && mv`); Phase 3.5 adds `.f_id`, `.approvals.spec=true`; Phase 6 adds `.branch`; Phase 11 deletes the file (run complete). This cache powers `/resume` and the plugin's enforcement hooks — but artifacts on disk remain the truth.
+
+4. **Announce intent:**
    - Tell the user: "Starting /feature pipeline for: <description>. Slug: <SLUG>. I'll interview you until we share an understanding of what to build, play the spec back for your sign-off, then run autonomously through plan → TDD → critic → verify → finish. After sign-off I'll only stop when the critic surfaces findings that need your decision, or on failures."
 
 ---
@@ -50,6 +57,13 @@ mcp__plugin_context7-plugin_context7__query-docs { id: "<resolved>", topic: "<to
 Call `mcp__serena__list_memories` to retrieve all memory names. For each name whose slug substring-matches the feature description (`$ARGUMENTS`) OR matches files plausibly affected by this work, call `mcp__serena__read_memory({ name: <name> })` and incorporate its content into your context.
 
 Add a `Memory grounding: N memories loaded (<comma-separated names>)` line to the internal ground summary. If `list_memories` fails (Serena MCP not running), skip this step silently with one note: `Memory grounding: skipped (Serena unavailable)`.
+
+Close the ground phase with the six-layer health banner — print its one line to the user (degradation stays allowed, but visible):
+
+```bash
+PIPE="$(ls -d "$HOME/.claude/plugins/cache/ai-pipeline-marketplace/ai-pipeline"/*/ 2>/dev/null | sort -V | tail -1)scripts/pipeline"
+bash "$PIPE/layer-status.sh"
+```
 
 Produce a 5-10 bullet **ground summary** (internal — not shown to user unless asked):
 - Architecture context (where this feature fits)
@@ -119,13 +133,13 @@ Gate: 1
 The critic saves a report and returns a one-line summary like:
 `critic gate 1: 0 Critical / 2 Important / 1 Nice-to-have. Report: docs/superpowers/critic-reports/<SLUG>-gate1.md`
 
-**Decision (synchronous — wait for the user's answer; there are no timeouts):**
-- Critical > 0: present the findings, ask `continue / address / override`.
+**Decision** — branch on the report's final fenced json verdict (`{"gate", "critical", "important", "nice", "status"}`; the LAST fenced json block in the report is the contract). Synchronous — wait for the user's answer; there are no timeouts:
+- `status: fail` (Critical > 0): present the findings, ask `continue / address / override`.
   - `address` → re-run Phase 2 with critic findings as additional input. Max 2 retries; if still Critical, put the decision to the user again.
-  - `override` → user must provide a written reason; append it to the report file AND append a `docs/risks.md` row (Open table: `R-NNN` next unused, date, Source = which gate, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
-  - `continue` → proceed.
-- Important-only (Critical == 0, Important > 0): do NOT stop here — carry the Important findings, in full, into the Phase 3.5 playback digest (one consolidated stop).
-- Nice-to-have only: proceed; mention the one-line summary.
+  - `override` → user must provide a written reason; append `**Gate decision:** override — <reason> (user, YYYY-MM-DD)` to the report file AND append a `docs/risks.md` row (Open table: `R-NNN` next unused, date, Source = which gate, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
+  - `continue` → append `**Gate decision:** continue (user, YYYY-MM-DD)` to the report file (the pre-merge hook requires a recorded decision for any report with Critical findings), then proceed.
+- `status: concerns` (Important-only): do NOT stop here — carry the Important findings, in full, into the Phase 3.5 playback digest (one consolidated stop).
+- `status: pass` (Nice-to-have only): proceed; mention the one-line summary.
 
 ---
 
@@ -239,6 +253,8 @@ Inputs:
   - Spec: docs/superpowers/specs/<SLUG>.md
   - Requirements file: docs/requirements/<F_ID>-<slug>.md
   - docs/architecture.md, docs/features.md, docs/risks.md
+  - docs/superpowers/runs/tool-ledger.jsonl — harness-recorded ground truth: a command the diff or spec claims was run that never appears here did not run
+  - The layer-status line (re-run scripts/pipeline/layer-status.sh)
   - All files under .claude/lessons/
 Slug: <SLUG>
 Gate: 2
@@ -266,13 +282,13 @@ If `mcp__serena__write_memory` fails (Serena MCP not running), warn once with th
 
 Print a one-line summary: `Memories captured: <N> new, <M> updated, <P> skipped. ADRs written: <K>`.
 
-**Decision (synchronous — wait for the user's answer; there are no timeouts):**
-- Critical > 0: present the findings, ask `continue / address / override`.
+**Decision** — branch on the report's final fenced json verdict (same contract as gate-1). Synchronous — wait; no timeouts:
+- `status: fail` (Critical > 0): present the findings, ask `continue / address / override`.
   - `address` → for each Critical/Important finding, run `bd create` to add a new task, then loop back to Phase 7 for those tasks. Max 2 cycles.
-  - `override` → require written reason in report AND append a `docs/risks.md` row (same protocol as gate-1).
-  - `continue` → proceed.
-- Important-only: present the Important findings (content, not just the count) and ask `continue / address`.
-- Nice-to-have only: proceed.
+  - `override` → append `**Gate decision:** override — <reason> (user, YYYY-MM-DD)` to the report AND append a `docs/risks.md` row (same protocol as gate-1).
+  - `continue` → append `**Gate decision:** continue (user, YYYY-MM-DD)` to the report, then proceed.
+- `status: concerns` (Important-only): present the Important findings (content, not just the count) and ask `continue / address`.
+- `status: pass`: proceed.
 
 ---
 
@@ -288,229 +304,111 @@ For each: run fresh, read full output, capture exit code. If any fail → STOP, 
 
 ### Phase 9b: Visual verification (frontend only)
 
-After the proving commands above pass, run a visual gate **only for frontend projects**.
+After the proving commands above pass, run the visual gate. All bash for this phase lives in the plugin's `scripts/pipeline/` — testable files, not markdown. Blocks are separate shells: resolve the script dir in EVERY block that calls one:
+
+```bash
+PIPE="$(ls -d "$HOME/.claude/plugins/cache/ai-pipeline-marketplace/ai-pipeline"/*/ 2>/dev/null | sort -V | tail -1)scripts/pipeline"
+```
 
 **Detect frontend:**
 
 ```bash
-HAS_FRONTEND=no
-FRONTEND_RULE=""
-if [ -f package.json ]; then
-  jq -e '.dependencies + .devDependencies | keys[] |
-    test("^(react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro)$")' \
-    package.json >/dev/null 2>&1 && { HAS_FRONTEND=yes; FRONTEND_RULE="framework dependency in package.json"; }
-fi
-# A bare index.html (WASM demo, docs page) must NOT gate a pure compute repo:
-# index.html counts only alongside package.json (there is no dev server to probe otherwise).
-if [ "$HAS_FRONTEND" = "no" ] && [ -f index.html ] && [ -f package.json ]; then
-  HAS_FRONTEND=yes; FRONTEND_RULE="index.html alongside package.json"
-fi
-[ "$HAS_FRONTEND" = "yes" ] && echo "Frontend detected: $FRONTEND_RULE"
+bash "$PIPE/detect-frontend.sh"    # prints HAS_FRONTEND=yes|no plus the rule that fired
 ```
 
-If `HAS_FRONTEND=no` → skip the visual sub-step and go directly to Phase 9c.
-
-**Read settings:**
+**Skip rule (applies to EVERY visual skip below):** a skipped gate still writes its verdict — hooks branch on artifact existence, and "skipped honestly" must be distinguishable from "died mid-verify":
 
 ```bash
-MODE=$(jq -r '.pipeline.visual_verify.mode // "required"' .claude/settings.json)
-BASE_URL=$(jq -r '.pipeline.visual_verify.base_url // "http://localhost:3000"' .claude/settings.json)
-DEV_CMD=$(jq -r '.pipeline.visual_verify.dev_command // "auto"' .claude/settings.json)
-TIMEOUT=$(jq -r '.pipeline.visual_verify.dev_port_timeout_sec // 60' .claude/settings.json)
-FAIL_CONSOLE=$(jq -r 'if .pipeline.visual_verify.fail_on_console_error == false then "false" else "true" end' .claude/settings.json 2>/dev/null || echo true)
+mkdir -p "docs/superpowers/visual-evidence/<SLUG>"
+printf '{"gate":"visual","slug":"<SLUG>","status":"skipped","blocking":false}\n' > "docs/superpowers/visual-evidence/<SLUG>/verdict.json"
 ```
 
-If `MODE=skip` → skip the visual sub-step and go to Phase 9c.
+If `HAS_FRONTEND=no` → write the skip verdict (above) and go directly to Phase 9c.
 
-**Verify Playwright MCP is registered:**
-
-```bash
-claude mcp list 2>/dev/null | grep -q "^playwright:" || {
-  echo "FAIL: Playwright MCP not registered. Run: claude mcp add --scope user playwright -- npx '@playwright/mcp@latest'"
-  [ "$MODE" = "required" ] && exit 1 || { echo "WARN: skipping visual sub-step"; SKIP_VISUAL=yes; }
-}
-```
-
-If `SKIP_VISUAL=yes` → skip the visual sub-step and go to Phase 9c.
-
-**Probe / start dev server (hybrid):**
+**Preflight** (settings, Playwright MCP check, dev server, URL extraction). The spec file is resolved statelessly — prefer the /fix diagnosis when it exists:
 
 ```bash
-DEV_PID=""
-if curl -sf -o /dev/null -m 2 "$BASE_URL"; then
-  echo "Reusing existing dev server at $BASE_URL"
-else
-  if [ "$DEV_CMD" = "auto" ]; then
-    if jq -e '.scripts.dev' package.json >/dev/null 2>&1; then
-      DEV_CMD="npm run dev"
-    elif jq -e '.scripts.start' package.json >/dev/null 2>&1; then
-      DEV_CMD="npm run start"
-    else
-      echo "FAIL: no scripts.dev / scripts.start in package.json. Set pipeline.visual_verify.dev_command."
-      [ "$MODE" = "required" ] && exit 1 || SKIP_VISUAL=yes
-    fi
-  fi
-  if [ -z "$SKIP_VISUAL" ]; then
-    bash -c "$DEV_CMD" >/tmp/ai-pipeline-dev.log 2>&1 &
-    DEV_PID=$!
-    trap '[ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null' EXIT
-    UP=no
-    for i in $(seq 1 $TIMEOUT); do
-      if curl -sf -o /dev/null -m 2 "$BASE_URL"; then
-        echo "Dev server up after ${i}s"
-        UP=yes
-        break
-      fi
-      sleep 1
-    done
-    if [ "$UP" = "no" ]; then
-      kill $DEV_PID 2>/dev/null
-      echo "FAIL: dev server did not answer 200 OK in ${TIMEOUT}s. Log: /tmp/ai-pipeline-dev.log"
-      [ "$MODE" = "required" ] && exit 1 || SKIP_VISUAL=yes
-    fi
-  fi
-fi
-```
-
-If `SKIP_VISUAL=yes` → skip the visual sub-step and go to Phase 9c.
-
-**Extract URLs from spec:**
-
-```bash
-# Resolve the spec file STATELESSLY, in this block (bash blocks may run as separate
-# shells — never rely on a variable set in another block or another command file):
-# /feature saves docs/superpowers/specs/<SLUG>.md; /fix saves <SLUG>-diagnosis.md.
 SPEC_FILE="docs/superpowers/specs/<SLUG>.md"
 [ -f "docs/superpowers/specs/<SLUG>-diagnosis.md" ] && SPEC_FILE="docs/superpowers/specs/<SLUG>-diagnosis.md"
-URLS=$(awk '/^## URLs to verify/{flag=1; next} /^## /{flag=0} flag && /^- /' \
-  "$SPEC_FILE" | sed -E 's/^- //; s|^https?://[^/]+||' | grep -E '^/' || true)
-[ -z "$URLS" ] && URLS="/"
+bash "$PIPE/visual-preflight.sh" "$SPEC_FILE"
 ```
 
-**Make evidence dirs:**
+Read its output: `MODE`, `BASE_URL`, optional `SKIP_VISUAL`, optional `DEV_PID`, and the `URLS<<EOF … EOF` block. Exit 1 with `SKIP_VISUAL=fail` means a `required`-mode preflight failure → STOP. `SKIP_VISUAL=yes` → write the skip verdict and go to Phase 9c.
+
+**Prepare evidence dirs and record the URL list** (the verdict script reads `urls.txt`):
 
 ```bash
 EVIDENCE_DIR="docs/superpowers/visual-evidence/<SLUG>"
 mkdir -p "$EVIDENCE_DIR/screenshots" "$EVIDENCE_DIR/snapshots"
+printf '%s\n' <each URL from URLS> > "$EVIDENCE_DIR/urls.txt"
 > "$EVIDENCE_DIR/console.txt"
 ```
 
-**Slugify helper (compute per URL):**
-
-For each URL `path`, compute `urlslug`:
-- `/` → `_root`
-- otherwise: lowercase, strip `?...` query, replace any non-alphanumeric with `_`, collapse repeats, trim leading/trailing `_`.
-
-Bash:
-```bash
-slugify() {
-  case "$1" in
-    /) echo _root ;;
-    *) echo "$1" | sed -E 's|\?.*||; s|^/||; s|/|_|g; s|[^a-zA-Z0-9_]|_|g; s|__+|_|g; s|^_||; s|_$||' | tr A-Z a-z ;;
-  esac
-}
-```
-
-**For each URL, drive Playwright MCP** (these are MCP tool calls, not bash):
-
-For each `path` in `$URLS`:
+**For each URL, drive Playwright MCP** (MCP tool calls, not bash). Compute `<urlslug>` per the slugify rule in `visual-verdict.sh` (`/` → `_root`; otherwise lowercase, strip the query, non-alphanumerics → `_`):
 
 1. `mcp__playwright__browser_navigate({ url: "<BASE_URL><path>" })`
 2. `mcp__playwright__browser_snapshot({ filename: "<EVIDENCE_DIR>/snapshots/<urlslug>.md" })`
 3. `mcp__playwright__browser_take_screenshot({ type: "png", fullPage: true, filename: "<EVIDENCE_DIR>/screenshots/<urlslug>.png" })`
-4. `mcp__playwright__browser_console_messages({ level: "warning" })`
+4. `mcp__playwright__browser_console_messages({ level: "warning" })` — append to `<EVIDENCE_DIR>/console.txt` under a `=== <path> ===` header
 
-After step 4, append to `<EVIDENCE_DIR>/console.txt`:
-```
-=== <path> ===
-<the console messages text>
-```
-
-**Analyze and write verdict:**
+**Verdict** (writes `summary.md` + machine-readable `verdict.json`):
 
 ```bash
-VERDICT=PASS
-REASONS=""
-for path in $URLS; do
-  s=$(slugify "$path")
-  png="$EVIDENCE_DIR/screenshots/${s}.png"
-  snap="$EVIDENCE_DIR/snapshots/${s}.md"
-  if [ ! -s "$png" ]; then
-    VERDICT=FAIL; REASONS="$REASONS
-- $path: screenshot missing"
-  else
-    sz=$(stat -f%z "$png" 2>/dev/null || stat -c%s "$png" 2>/dev/null)
-    if [ "$sz" -lt 1024 ]; then
-      VERDICT=FAIL; REASONS="$REASONS
-- $path: screenshot < 1KB (likely blank)"
-    fi
-  fi
-  if [ ! -s "$snap" ]; then
-    VERDICT=FAIL; REASONS="$REASONS
-- $path: accessibility snapshot empty"
-  fi
-done
-if [ "$FAIL_CONSOLE" = "true" ] && grep -qiE '\[error\]|console\.error|TypeError|ReferenceError' "$EVIDENCE_DIR/console.txt" 2>/dev/null; then
-  VERDICT=FAIL; REASONS="$REASONS
-- console error(s) detected — see console.txt"
-fi
-
-cat > "$EVIDENCE_DIR/summary.md" <<EOF
-# Visual verification summary
-
-**Slug:** <SLUG>
-**Date:** $(date -Iseconds 2>/dev/null || date)
-**Mode:** $MODE
-**Base URL:** $BASE_URL
-**URLs visited:** $(echo $URLS | tr '\n' ' ')
-**Verdict:** $VERDICT
-
-## Reasons (if FAIL)
-$REASONS
-
-## Files
-- screenshots/ — PNG per URL
-- snapshots/   — accessibility tree per URL
-- console.txt  — browser console output per URL
-EOF
+PIPE="$(ls -d "$HOME/.claude/plugins/cache/ai-pipeline-marketplace/ai-pipeline"/*/ 2>/dev/null | sort -V | tail -1)scripts/pipeline"
+# MODE re-resolved HERE — never carried across bash blocks (command-bash-block-state)
+MODE=$(jq -r '.pipeline.visual_verify.mode // "required"' .claude/settings.json 2>/dev/null || echo required)
+bash "$PIPE/visual-verdict.sh" "<SLUG>" "$MODE"
 ```
 
 **Cleanup dev server:**
 
 ```bash
-[ -n "$DEV_PID" ] && kill $DEV_PID 2>/dev/null && echo "Killed dev server PID $DEV_PID"
-trap - EXIT
+[ -f docs/superpowers/runs/dev-server.pid ] && kill "$(cat docs/superpowers/runs/dev-server.pid)" 2>/dev/null
+rm -f docs/superpowers/runs/dev-server.pid
 ```
 
-**Apply verdict:**
+**Apply verdict** — read `$EVIDENCE_DIR/verdict.json` (never a shell variable from another block):
 
-- `VERDICT=PASS` → proceed to Phase 9c.
-- `VERDICT=FAIL` and `MODE=required` → STOP. Print contents of `summary.md`. Do NOT merge.
-- `VERDICT=FAIL` and `MODE=best_effort` → warn, print summary, proceed to Phase 9c.
+- `status: pass` (or `skipped`) → proceed to Phase 9c.
+- `status: fail`, `blocking: true` → STOP. Print `summary.md`. Do NOT merge (the plugin's pre-merge hook also blocks on this verdict).
+- `status: fail`, `blocking: false` → warn, print summary, proceed to Phase 9c.
 
 ### Phase 9c: Quantitative verification (compute classes / declared NFRs)
 
-**Resolve the mode** (statelessly, in this block):
+One stateless block — resolve mode, then run the gate script:
 
 ```bash
+PIPE="$(ls -d "$HOME/.claude/plugins/cache/ai-pipeline-marketplace/ai-pipeline"/*/ 2>/dev/null | sort -V | tail -1)scripts/pipeline"
 QMODE=$(jq -r '.pipeline.quant_verify.mode // "by_class"' .claude/settings.json 2>/dev/null || echo by_class)
 PCLASS=$(jq -r '.pipeline.project_class // "unset"' .claude/settings.json 2>/dev/null || echo unset)
 if [ "$QMODE" = "by_class" ]; then
   case "$PCLASS" in numerical-library|simulation|data-pipeline) QMODE=required ;; *) QMODE=skip ;; esac
 fi
+REQ="docs/requirements/<F_ID>-<slug>.md"; [ -f "$REQ" ] || REQ="-"
+# skip only when NOTHING is declared anywhere: NFR commands, global commands, budgets
+DECLARED=no
+{ [ "$REQ" != "-" ] && grep -q 'Proving command:' "$REQ"; } && DECLARED=yes
+[ "$(jq -r '(.pipeline.quant_verify.property_test_command // "") + (.pipeline.quant_verify.benchmark_command // "") + (.pipeline.quant_verify.tolerance_report_command // "")' .claude/settings.json 2>/dev/null)" != "" ] && DECLARED=yes
+[ "$(jq -r '.pipeline.quant_verify.budgets // [] | length' .claude/settings.json 2>/dev/null)" != "0" ] && DECLARED=yes
+[ "$QMODE" = "skip" ] && [ "$DECLARED" = "yes" ] && QMODE=best_effort
+if [ "$QMODE" = "skip" ]; then
+  mkdir -p "docs/superpowers/quant-evidence/<SLUG>"
+  printf '{"gate":"quant","slug":"<SLUG>","status":"skipped","blocking":false}\n' > "docs/superpowers/quant-evidence/<SLUG>/verdict.json"
+  echo "quant gate: skipped (no checks declared) — skip verdict written"
+else
+  bash "$PIPE/quant-verify.sh" "<SLUG>" "$REQ" "$QMODE"
+fi
 ```
 
-If `QMODE=skip` AND no checks are declared anywhere (no NFR proving commands in the requirements file, all global commands empty) → skip to Phase 10. If `QMODE=skip` but checks ARE declared → run the gate in `best_effort` (warn, never stop). Otherwise:
+The script implements: NFR proving commands + `verify.method` declarations (Test evidence runs via `pipeline.quant_verify.test_runner`; Analysis/Inspection/Review evidence files must exist; declared-but-unrunnable or missing → `partial`) + global commands + budgets, one run per seed with `SEED` exported (**pass^k** — deterministic oracles pass only when ALL seeds pass; empty `seeds` = one run without `SEED`; **pass@k** is reserved for NFRs explicitly declared statistical), the mutation sub-step per `pipeline.quant_verify.mutation` (advisory survivors → Important findings; `required` with empty `mutation_command` → `partial`; the command receives `MUTATION_THRESHOLD` from `pipeline.quant_verify.mutation_threshold` and must exit nonzero when the score falls below it), and the **anti-overclaim verdict**: `verified` only when every declared check executed and passed; declared-but-unexecuted → `partial` (**zero collected checks → `partial` in `required` mode, `skipped` in `best_effort` — never `verified`**: an empty run-manifest proves nothing); any failure → `failed`. Evidence: `summary.md`, `run-manifest.md`, `verdict.json` under `docs/superpowers/quant-evidence/<SLUG>/`.
 
-1. **Evidence dir:** `docs/superpowers/quant-evidence/<SLUG>/`.
-2. **Collect checks:** every NFR proving command from `docs/requirements/<F_ID>-<slug>.md`; every requirement whose `verify.method` is `Test` with a named `evidence` test id (run it via the project's test runner); for `Analysis`/`Inspection`/`Review` methods verify the evidence file exists (missing → that requirement counts as unexecuted → `partial`); plus `pipeline.quant_verify.{property_test_command, benchmark_command, tolerance_report_command, budgets}` where set. An NFR with no proving command — whether or not it declares `verify:` — → record as an **Important finding** in summary.md (not a block).
-3. **Run** each command fresh, once per seed in `pipeline.quant_verify.seeds` (export `SEED` to the command's environment; `seeds: []` → run each command exactly once without `SEED` exported); capture exit codes and outputs. **pass^k**: deterministic oracles pass only if ALL seeds pass; **pass@k** applies only to NFRs explicitly declared statistical — report both numbers.
-4. **Mutation sub-step** per `pipeline.quant_verify.mutation`: `off` → skip; `advisory` (default) → run `mutation_command` if set, surviving mutants become Important findings in summary.md; `required` → `mutation_command` MUST be set (empty command with `mutation: required` → verdict `partial`: a declared check that cannot execute), and a mutation score below `pipeline.quant_verify.mutation_threshold` FAILs the gate.
-5. **Code-link audit** (advisory): scan diffed source for `@relation(F-*/FR-*)` markers; for every requirement `code:` entry, recompute the symbol-body sha256 — mismatch → mark the link **suspect** in summary.md; public numerical functions in the diff with no marker, and requirements with no linked code/test → coverage notes.
-6. **Write evidence:** `run-manifest.md` (commit SHA, seed set, platform, dependency versions, input-data hashes) and `summary.md` (per-check table, pass^k / pass@k, advisory findings, verdict).
-7. **Verdict — anti-overclaim rule:** `verified` ONLY if every declared oracle/proving command was actually executed and passed for all required seeds; any declared-but-unexecuted check → `partial` (list what did not run); any failed check → `failed`. **Zero collected checks in `required` mode → `partial`, never `verified`** — an empty manifest proves nothing (record "no checks declared" as an Important finding).
+**Code-link audit (advisory, prose step):** scan the diff's source files for `@relation(F-*/FR-*)` markers; for every requirement `code:` entry recompute the symbol-body sha256 — a mismatch is recorded as a **suspect** link in summary.md (re-verify, not a block); public numerical functions in the diff without markers, and requirements with no linked code/test, become coverage notes. Cross-check claimed commands against the hook ledger `docs/superpowers/runs/tool-ledger.jsonl` — a check "run" that never appears in the harness ledger did not run.
 
-**Apply:** `verified` → Phase 10. `partial`/`failed` + `QMODE=required` → STOP, print summary.md, do NOT merge; ask `address / override`: `address` → `bd create` a task per failed/unexecuted check, loop back to Phase 7, then re-run Phase 8 (the critic now reads the fresh quant evidence) and Phase 9. `override` → written reason + `docs/risks.md` row, same protocol as the critic gates. `partial`/`failed` + `best_effort` → warn, proceed. A PASS without a run-manifest does not count as `verified`.
+**Apply** (from `verdict.json`):
+
+- `verified` → Phase 10.
+- `partial`/`failed` + `QMODE=required` → STOP, print `summary.md`, ask `address / override`: `address` → `bd create` a task per failed/unexecuted check, loop back to Phase 7, then re-run Phase 8 (the critic reads the fresh quant evidence) and Phase 9. `override` → written reason + `docs/risks.md` row, same protocol as the critic gates.
+- `partial`/`failed` + `best_effort` → warn, proceed. A verdict without a run-manifest does not count as `verified`.
 
 ---
 
@@ -572,9 +470,10 @@ git add docs/features.md docs/requirements/ docs/TRACEABILITY.md docs/decisions/
 git commit -m "docs: feature shipped — <slug> (<F_ID>)"
 ```
 
-Close the beads epic:
+Close the beads epic and the run:
 ```bash
 bd close $EPIC_ID --reason "Shipped — merge SHA <sha>"
+rm -f docs/superpowers/runs/current.json   # run complete — hooks stand down
 ```
 
 ---
@@ -590,6 +489,7 @@ Critic:  gate-1 (<summary>), gate-2 (<summary>)
 Tasks:   <N> beads tasks closed
 Diff:    <merge-sha or PR URL>
 Tests:   <pass/fail summary>
+Layers:  <the layer-status.sh line from ground — re-run it here if any layer changed>
 
 Next: /feature "<next thing>" or git push (manual).
 ```

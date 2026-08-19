@@ -1,6 +1,6 @@
 # ai-pipeline
 
-A Claude Code plugin that ships a 9-command AI development pipeline with frontier-round elicitation and an explicit spec playback sign-off gate, an automatic senior-engineer critic at two gates, a lessons-learned flywheel, Serena memory for stable project knowledge, and a Playwright MCP visual-verify gate — six context layers in total.
+A Claude Code plugin that ships a 10-command AI development pipeline with frontier-round elicitation and an explicit spec playback sign-off gate, an automatic senior-engineer critic at two gates, a lessons-learned flywheel, Serena memory for stable project knowledge, and a Playwright MCP visual-verify gate — six context layers in total.
 
 ## What you get
 
@@ -17,8 +17,9 @@ After installing this plugin, you can bootstrap any new project with one command
 | `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
 | `/questionnaire "<topic>"` | Generate a fill-in requirements questionnaire for a client or domain expert |
 | `/release` | Cut a product release: semver, human CHANGELOG, requirements diff, local tag |
+| `/resume` | Continue an interrupted pipeline run — position derived from artifacts, not memory |
 
-You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/finish` — those are internal phases of the 9 commands above.
+You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/finish` — those are internal phases of the 10 commands above.
 
 ## Install
 
@@ -27,7 +28,7 @@ claude plugin marketplace add easyhex/ai-pipeline-plugin
 claude plugin install ai-pipeline@ai-pipeline-marketplace
 ```
 
-That's it. The 9 commands and the `senior-critic` agent are now available globally in any project.
+That's it. The 10 commands and the `senior-critic` agent are now available globally in any project.
 
 ## Bootstrap a new project
 
@@ -56,6 +57,7 @@ The pipeline interviews you first (frontier rounds of numbered questions with re
 
 ## Pipeline highlights
 
+- **Mechanism layer (v0.7.0)** — enforcement in the harness, not prose: plugin hooks (a PostToolUse ledger as ground truth, a Stop gate that will not end a session mid-verify, a PreToolUse blocker that refuses `git merge/push` against a failing gate verdict or unresolved Critical findings, PreCompact snapshots, prompt-time context injection), machine-readable gate verdicts (critic JSON + verdict.json files), run-state + `/resume`, all gate bash decomposed into tested `scripts/pipeline/`, a promptfoo behavioral test skeleton, and Playwright MCP pinned.
 - **Math layer (v0.6.0)** — project classes (compute projects skip the visual gate and get `docs/model.md`), an oracle taxonomy for numerical TDD (`docs-meta/NUMERICS_TESTING.md`), the Phase 9c quantitative gate (NFR proving commands per seed, pass^k, anti-overclaim verdicts, run-manifest evidence, advisory mutation testing), `@relation` code markers with hash-tracked suspect links, verification-method enums (Test/Analysis/Inspection/Review), and a critic that knows numerical failure modes (claims-check quarantine, verification-gap lens, verifier-sabotage check).
 - **Requirements layer (v0.5.0)** — living FR/NFR files with EARS acceptance criteria and immutable `mid` identity (`docs/requirements/`), a traceability table (requirement → spec → gates → merge SHA), a risk register fed by gate overrides, analog analysis, a glossary, committed ADRs, and `/release` generating a human CHANGELOG with a "requirements changed" section.
 - **Elicitation layer (v0.4.0)** — a single canonical interview technique (`docs-meta/ELICITATION.md`: frontier rounds, facts-vs-decisions, question-hygiene lint, forced NFR round, typed `[NEEDS CLARIFICATION]`/`TBC` debt), a spec playback gate requiring explicit approval before any code, provenance sections separating user decisions from machine assumptions, and `/questionnaire` for requirements held in someone else's head.
@@ -84,15 +86,16 @@ claude mcp add --scope user serena -- serena start-mcp-server --context claude-c
 
 ## Architecture
 
-The pipeline has three layers:
+The pipeline has four auto-loaded components:
 
-1. **9 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
+1. **10 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
 2. **`senior-critic` subagent** (in `agents/`) — auto-loaded, invoked at two gates per feature
-3. **Per-project templates** (in `assets/templates/`) — written into your project by `/init`
+3. **Enforcement hooks** (in `hooks/` + `scripts/hooks/`) — harness-level gates that no-op outside active pipeline runs
+4. **Per-project templates** (in `assets/templates/`) — written into your project by `/init`
 
 Per-project files written by `/init`:
 
-- `CLAUDE.md` — pipeline rules and the 9-command surface
+- `CLAUDE.md` — pipeline rules and the 10-command surface
 - `docs/architecture.md` — Master Plan: target architecture (≤300 lines)
 - `docs/features.md` — Master Plan: feature inventory (≤500 lines)
 - `docs/roadmap.md` — Master Plan: ordered priorities (≤200 lines)

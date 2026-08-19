@@ -5,7 +5,7 @@
         "matcher": "",
         "hooks": [
           { "type": "command", "command": "bd prime 2>/dev/null || true" },
-          { "type": "command", "command": "echo \"Lessons: $(ls .claude/lessons/*.md 2>/dev/null | wc -l | tr -d ' ') | Pipeline: /init /plan-improve /feature /improve /fix /lesson /remember /questionnaire /release\"" }
+          { "type": "command", "command": "echo \"Lessons: $(ls .claude/lessons/*.md 2>/dev/null | wc -l | tr -d ' ') | Pipeline: /init /plan-improve /feature /improve /fix /lesson /remember /questionnaire /release /resume\"" }
         ]
       }
     ],
@@ -31,7 +31,8 @@
       "tolerance_report_command": "",
       "mutation": "advisory",
       "mutation_command": "",
-      "mutation_threshold": 80
+      "mutation_threshold": 80,
+      "test_runner": ""
     },
     "visual_verify": {
       "mode": "required",

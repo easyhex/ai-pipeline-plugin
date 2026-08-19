@@ -42,3 +42,6 @@ htmlcov/
 
 # Claude Code session-local
 .claude/cache/
+
+# ai-pipeline transient run state (ledger, pids, snapshots) — /resume derives from artifacts
+docs/superpowers/runs/

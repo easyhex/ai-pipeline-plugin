@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 9-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 10-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 9 user-facing commands
+## The 10 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, seeds `docs/glossary.md` and installs `docs/risks.md` + `docs/analysis/analogs.md` (optional web-search fill), confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
@@ -27,6 +27,9 @@ Capture a project-specific fact to Serena memory. Plain wrapper around `mcp__ser
 
 ### `/questionnaire "<topic>"`
 Generate a requirements questionnaire for someone else's head (client, domain expert, stakeholder). Interviews you only about the send — who it goes to and what must come back — then writes a fill-in Markdown document to `docs/requirements/`. Answered questionnaires are read by the next `/feature`/`/improve` ground phase; answers become "User decisions" with provenance.
+
+### `/resume [slug]`
+Continue an interrupted pipeline run. Derives the true position from artifact existence (spec → approval line → plan → beads tasks → gate reports → evidence → merge) and reconciles it with the `docs/superpowers/runs/current.json` cache — files win over the cache. Never re-mints an F-ID; never re-runs an approved playback.
 
 ### `/release`
 Cut a product release: proposes the next semver from shipped-since-last-tag features (confirmed by one ❓), writes a human-register `CHANGELOG.md` from spec Goals (never from commit messages) including a mid-based "requirements changed since last release" section, stamps `in vX.Y.Z` into `docs/features.md`, commits and tags locally. Never pushes.
@@ -79,6 +82,20 @@ docs/superpowers/critic-reports/YYYY-MM-DD-<slug>-gate{1,2}.md
 **Gate decisions are synchronous** — the pipeline waits for an answer; there are no timeouts and no self-decided defaults. Outcome mapping: Critical → stop and ask; **Important-only** at gate-1 → findings are carried, in full, into the Phase 3.5 playback digest (one consolidated stop); **Important-only** at gate-2 → present the findings and ask `continue / address`; Nice-to-have only → proceed.
 
 ---
+
+## Enforcement hooks (v0.7 — ship with the plugin, not this project)
+
+The plugin registers harness hooks that no-op outside an active pipeline run (`docs/superpowers/runs/current.json`):
+
+| Hook | What it enforces |
+|---|---|
+| PostToolUse (Bash) | appends every Bash call to `docs/superpowers/runs/tool-ledger.jsonl` — ground truth the verify phase and critic check claimed commands against |
+| PreToolUse (Bash) | blocks `git merge` / `git push` / `gh pr create` while a blocking `verdict.json` (visual/quant) stands or the newest critic report has unresolved Critical findings without an override |
+| Stop | blocks session end ONCE while the run sits in phases 9–10 with no gate verdict written (`stop_hook_active` loop safety) |
+| PreCompact | snapshots run position + ledger tail before context destruction |
+| UserPromptSubmit | injects a compact digest (lessons index, memory names, active-run line) into every prompt of every pipeline PROJECT (run or not — the only hook active outside runs) |
+
+Abandoning a run: delete `docs/superpowers/runs/current.json` — all hooks stand down.
 
 ## Git policy
 

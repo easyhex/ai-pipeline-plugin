@@ -134,6 +134,16 @@ Use this exact structure:
 (If none: "None.")
 ```
 
+## Machine verdict (end of report file)
+
+End every report with a fenced json block — the LAST fenced json block in the file is the machine contract orchestrators branch on:
+
+```json
+{"gate": 1, "critical": 0, "important": 2, "nice": 1, "status": "concerns"}
+```
+
+`status`: `"fail"` when Critical > 0; `"concerns"` when Critical == 0 and Important > 0; `"pass"` otherwise. Counts must match the report sections exactly.
+
 ## Reporting back to the orchestrator
 
 After saving the file, return a one-line summary in this exact shape:

@@ -1,6 +1,6 @@
 # Pipeline rules
 
-This project uses a 9-command AI development pipeline.
+This project uses a 10-command AI development pipeline.
 Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICITATION.md`.
 
 ## User-facing commands (the only commands you should ever ask the user to run)
@@ -16,6 +16,7 @@ Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICIT
 | `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
 | `/questionnaire "<topic>"` | Generate a fill-in requirements questionnaire for a client/expert (knowledge in someone else's head) |
 | `/release` | Cut a product release: semver + human CHANGELOG + requirements diff + local tag |
+| `/resume` | Continue an interrupted pipeline run (position derived from artifacts) |
 
 **Never expose internal phases** (`/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, `/finish`) to the user as commands. They run automatically inside `/feature`, `/improve`, `/fix`.
 
@@ -123,6 +124,7 @@ Settings live under `.claude/settings.json` → `pipeline.quant_verify`:
 | `seeds` | `[0]` | seed set exported as `SEED` to every proving command; pass^k across all of them |
 | `budgets` | `[]` | global {name, command, threshold} checks run alongside NFR commands |
 | `property_test_command` / `benchmark_command` / `tolerance_report_command` | `""` | project-wide checks (empty = skip) |
-| `mutation` / `mutation_command` / `mutation_threshold` | `advisory` / `""` / `80` | `off` / `advisory` (survivors → Important findings) / `required` (score below threshold fails the gate; empty command with `required` → verdict `partial`) |
+| `mutation` / `mutation_command` / `mutation_threshold` | `advisory` / `""` / `80` | `off` / `advisory` (survivors → Important findings) / `required` (empty command → verdict `partial`); the command receives `MUTATION_THRESHOLD` and must exit nonzero when the score falls below it |
+| `test_runner` | `""` | runner for `verify.method: Test` evidence ids (e.g. `pytest -k`); empty while Test evidence is declared → those requirements count unexecuted (`partial`) |
 
 `pipeline.project_class` (written by `/init`) drives the `by_class` resolution and the visual-gate default (compute classes and `cli` skip visual).

@@ -11,6 +11,7 @@ argument-hint: "<bug description>"
 
 1. Master Plan must exist (same check as `/feature`).
 2. Generate `$SLUG` as in `/feature`, but prefix with `fix-`: `YYYY-MM-DD-fix-<slug>`.
+2b. Run-state: same as `/feature` pre-flight step 3 — and when updating `.phase`, use the /feature-EQUIVALENT ids, not this file's local numbering (the enforcement hooks guard phases `9|9b|9c|10`): diagnosis=2, gate-1=3, playback=3.5, plan=4, TDD=7, gate-2=8, verify=9 (9b/9c inside it), finish=10, lesson-write=11; delete the file after the lesson commit.
 3. Announce: "Starting /fix pipeline for: <description>. Will debug, fix, then write a lesson file."
 
 ---
