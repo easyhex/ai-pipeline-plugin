@@ -1,0 +1,3 @@
+Universally-quantified acceptance rules ("verified iff every declared check passed") are vacuously satisfied by an EMPTY check set. Every gate verdict needs an explicit zero-checks branch: in the quant gate, zero collected checks in required mode → `partial`, never `verified`, with "no checks declared" recorded as an Important finding. Same reasoning applies to any future gate (visual, hooks) — an empty manifest proves nothing.
+
+Captured by senior-critic at gate-2 of feature/v0.6-math on 2026-08-18. Guard: check.sh T48.

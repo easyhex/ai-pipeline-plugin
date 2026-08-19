@@ -1,0 +1,3 @@
+When inserting a new phase after an existing gate in a command file, audit EVERY earlier "skip to Phase N" jump target — not just the gate's final verdict lines. v0.6's Phase 9c was bypassed by all four of 9b's skip paths ("skip to Phase 10") for exactly the compute projects it was built for, while the grep-based check suite stayed green. Extension of [[inheritance-delta-checklist]] to intra-file control flow. Guard: check.sh T47 asserts exactly one 'skip to Phase 10' remains in feature.md.
+
+Captured by senior-critic at gate-2 of feature/v0.6-math on 2026-08-18.
