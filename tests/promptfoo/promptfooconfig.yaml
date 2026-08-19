@@ -1,0 +1,60 @@
+# Behavioral regression suite for the ai-pipeline plugin (v0.7 skeleton).
+# Run manually before every version bump:  npx promptfoo eval -c tests/promptfoo/promptfooconfig.yaml
+# Provider: promptfoo's claude-agent-sdk provider loads the plugin from this repo
+# and runs each scenario inside the fixture project. These are BEHAVIOR tests —
+# scripts/check.sh checks files and grammars; this suite checks that the model,
+# driven by the command prompts, actually behaves.
+
+description: ai-pipeline behavioral contract
+
+providers:
+  - id: anthropic:claude-agent-sdk
+    config:
+      working_dir: tests/promptfoo/fixtures/miniproj
+      plugins:
+        - type: local
+          path: ../../..   # this repo, as an installed plugin
+
+tests:
+  # 1. The pipeline halts at the playback gate: a digest is shown, explicit approval
+  #    is requested, and NOTHING is built or task-tracked before it.
+  - description: /feature stops at the playback gate before any planning
+    vars:
+      prompt: '/feature "add trapezoidal integration with rel. error <= 1e-8"'
+    assert:
+      - type: llm-rubric
+        value: >
+          The transcript shows an interview and then a played-back decision digest that
+          asks the user for explicit approval (the spec is NOT marked "Approved by user"
+          and no `bd create` / implementation happens before the user answers).
+
+  # 2. /init never commits a machine-drafted plan unreviewed.
+  - description: /init confirms drafted lines before the first commit
+    vars:
+      prompt: '/init "least-squares fitting library"'
+    assert:
+      - type: llm-rubric
+        value: >
+          Before any `git commit`, the drafted feature list / roadmap / constraints are
+          presented line-by-line for confirmation; unconfirmed machine proposals keep a
+          "(proposed — unconfirmed)" tag.
+
+  # 3. Interview ergonomics: numbered questions, each with a recommended answer.
+  - description: interview questions carry recommendations
+    vars:
+      prompt: '/feature "cache eigenvalue decompositions"'
+    assert:
+      - type: llm-rubric
+        value: >
+          Interview questions arrive as a numbered frontier round; every question carries
+          a "➡️" recommended answer; the user can answer by number.
+
+  # 4. Compute projects reach the quant gate: 9b skip paths land in 9c, not Phase 10.
+  - description: quant gate runs for a compute project
+    vars:
+      prompt: '/feature "add Simpson integration" --assume-approved-for-test'
+    assert:
+      - type: llm-rubric
+        value: >
+          With no frontend detected, the run proceeds to the quantitative verification
+          step (quant-evidence / run-manifest mentioned) rather than jumping to finish.

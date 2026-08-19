@@ -135,7 +135,7 @@ The pipeline depends on 4 Claude Code plugins. Detect which are missing and inst
      ```bash
      # Register MCP server at user scope (idempotent — skip if already registered)
      if ! claude mcp list 2>/dev/null | grep -q "^playwright:"; then
-       claude mcp add --scope user playwright -- npx '@playwright/mcp@latest' 2>&1 | tail -3
+       claude mcp add --scope user playwright -- npx '@playwright/mcp@0.0.79' 2>&1 | tail -3
      fi
      ```
    - On any failure: print warning with the exact failed command, continue.
@@ -144,7 +144,7 @@ The pipeline depends on 4 Claude Code plugins. Detect which are missing and inst
    ```
    npx not found (Node.js missing). Install Node 18+ to enable visual-verify gate.
    Then re-enable in this project:
-     claude mcp add --scope user playwright -- npx '@playwright/mcp@latest'
+     claude mcp add --scope user playwright -- npx '@playwright/mcp@0.0.79'
    Continuing without Playwright MCP — visual-verify gate will be skipped for frontend projects.
    ```
 

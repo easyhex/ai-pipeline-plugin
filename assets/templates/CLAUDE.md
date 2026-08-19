@@ -1,6 +1,6 @@
 # Pipeline rules
 
-This project uses a 9-command AI development pipeline.
+This project uses a 10-command AI development pipeline.
 Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICITATION.md`.
 
 ## User-facing commands (the only commands you should ever ask the user to run)
@@ -16,6 +16,7 @@ Source of truth: `docs-meta/PIPELINE.md`. Interview technique: `docs-meta/ELICIT
 | `/remember "<fact>"` | Capture a project-specific fact to Serena memory (rare) |
 | `/questionnaire "<topic>"` | Generate a fill-in requirements questionnaire for a client/expert (knowledge in someone else's head) |
 | `/release` | Cut a product release: semver + human CHANGELOG + requirements diff + local tag |
+| `/resume` | Continue an interrupted pipeline run (position derived from artifacts) |
 
 **Never expose internal phases** (`/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, `/finish`) to the user as commands. They run automatically inside `/feature`, `/improve`, `/fix`.
 

@@ -14,10 +14,10 @@ pass() { echo "  ok: $1"; }
 # Executes the actual filter extracted from feature.md against two fixtures.
 if python3 - <<'EOF'
 import re, json, subprocess, sys
-src = open('commands/feature.md').read()
-m = re.search(r"FAIL_CONSOLE=\$\(jq -r '([^']+)'", src)
+src = open('scripts/pipeline/visual-verdict.sh').read()
+m = re.search(r"FC=\$\(jq -r '([^']+)'", src)
 if not m:
-    print("FAIL_CONSOLE jq line not found in feature.md"); sys.exit(1)
+    print("fail_on_console_error jq line not found in visual-verdict.sh"); sys.exit(1)
 filt = m.group(1)
 cases = [
     ({"pipeline": {"visual_verify": {"fail_on_console_error": False}}}, "false"),
@@ -38,8 +38,7 @@ else fail "T1 fail_on_console_error off-switch is dead (jq // treats false as ab
 # (bash blocks may run as separate shells — no cross-command variable handoff),
 # prefer the /fix diagnosis file, and the awk must consume the variable.
 if grep -qF -- '-diagnosis.md" ] && SPEC_FILE=' commands/feature.md \
-   && grep -qF '"$SPEC_FILE" | sed' commands/feature.md \
-   && ! grep -qF 'docs/superpowers/specs/<SLUG>.md | sed' commands/feature.md \
+   && grep -qF '## URLs to verify' scripts/pipeline/visual-preflight.sh \
    && grep -qF -- '-diagnosis.md' commands/fix.md; then
   pass "T2 SPEC_FILE resolved statelessly at extraction, diagnosis file preferred"
 else fail "T2 Phase 9b spec-file resolution is hardcoded or relies on cross-shell state"; fi
@@ -97,8 +96,8 @@ else pass "T6 no phantom .claude/commands|agents paths"; fi
 # T7 — a bare index.html must not force the visual gate on compute repos:
 # the index.html rule must be guarded by package.json (positive invariant),
 # and the old unconditional line must be gone.
-if grep -qF 'index.html ] && [ -f package.json' commands/feature.md \
-   && ! grep -q '^\[ -f index.html \] && HAS_FRONTEND=yes$' commands/feature.md; then
+if grep -qF 'index.html ] && [ -f package.json' scripts/pipeline/detect-frontend.sh \
+   && ! grep -rq '^\[ -f index.html \] && HAS_FRONTEND=yes$' commands/ scripts/pipeline/; then
   pass "T7 index.html detection requires package.json alongside"
 else fail "T7 index.html frontend detection is unconditional (hard-blocks compute repos)"; fi
 
@@ -327,9 +326,9 @@ else fail "T39 NUMERICS_TESTING.md missing, incomplete, or unreferenced"; fi
 if grep -q 'quant_verify' assets/templates/settings.json \
    && grep -q 'quant_verify' assets/templates/CLAUDE.md \
    && grep -q 'quant_verify' assets/templates/PIPELINE.md \
-   && [ "$(grep -l 'quant-evidence' commands/*.md | wc -l | tr -d ' ')" = "1" ]; then
-  pass "T40 quant_verify schema reflected everywhere; 9c canonical in feature.md"
-else fail "T40 quant_verify schema drift or 9c duplicated"; fi
+   && [ "$(grep -l 'quant-verify.sh' commands/*.md | wc -l | tr -d ' ')" = "1" ]; then
+  pass "T40 quant_verify schema reflected everywhere; 9c gate canonical in feature.md"
+else fail "T40 quant_verify schema drift or 9c gate duplicated"; fi
 
 # T41 — 9c honesty semantics: run-manifest, pass^k, anti-overclaim downgrade.
 if grep -q 'run-manifest' commands/feature.md \
@@ -374,8 +373,9 @@ if grep -q 'Mathematical approach' assets/templates/SPEC_FORMAT.md \
 else fail "T45 numeric specs can still omit the mathematics"; fi
 
 # T47 — no 9b skip path may bypass 9c: the only 'skip to Phase 10' left is 9c's own.
-if [ "$(grep -c 'skip to Phase 10' commands/feature.md)" = "1" ] \
-   && ! grep -q 'skip directly to Phase 10' commands/feature.md; then
+if [ "$(grep -c 'skip to Phase 10' commands/feature.md)" -le 1 ] \
+   && ! grep -q 'skip directly to Phase 10' commands/feature.md \
+   && [ "$(grep -c 'go directly to Phase 9c\|go to Phase 9c' commands/feature.md)" -ge 2 ]; then
   pass "T47 all pre-9c skip paths route through 9c"
 else fail "T47 a 9b skip path jumps straight to Phase 10 — compute projects bypass the quant gate"; fi
 
@@ -391,6 +391,72 @@ else fail "T48 9c can overclaim on empty checks / phantom threshold / dead-end f
 if grep -q '9c' commands/improve.md && grep -q '9c' commands/fix.md; then
   pass "T46 /improve and /fix carry explicit 9c deltas"
 else fail "T46 9c inherited without deltas (inheritance-delta-checklist violation)"; fi
+
+# ---- v0.7 mechanism contract ----
+
+# T49 — plugin hooks: hooks.json exists, every referenced script exists, parses (bash -n),
+# and carries a no-op guard so non-pipeline projects are unaffected.
+if [ -f hooks/hooks.json ] && jq empty hooks/hooks.json 2>/dev/null; then
+  HOOKS_OK=yes
+  for s in $(jq -r '.. | .command? // empty' hooks/hooks.json | grep -o 'scripts/hooks/[a-z-]*\.sh'); do
+    [ -f "$s" ] && bash -n "$s" 2>/dev/null && grep -q 'exit 0' "$s" || { HOOKS_OK=no; echo "  bad hook: $s"; }
+  done
+  [ "$HOOKS_OK" = "yes" ] && pass "T49 plugin hooks present, parse, and guard no-op" \
+    || fail "T49 a hook script is missing, unparsable, or unguarded"
+else fail "T49 hooks/hooks.json missing or invalid"; fi
+
+# T50 — Stop hook loop safety: must honor stop_hook_active (never an unclosable session).
+if grep -q 'stop_hook_active' scripts/hooks/stop-verdict-gate.sh 2>/dev/null; then
+  pass "T50 Stop hook blocks at most once"
+else fail "T50 Stop hook can loop a session shut"; fi
+
+# T51 — pipeline bash lives in scripts, not markdown: every scripts/pipeline/*.sh parses,
+# feature.md calls them, and the old inline dev-server block is gone from feature.md.
+if ls scripts/pipeline/*.sh >/dev/null 2>&1; then
+  P_OK=yes
+  for s in scripts/pipeline/*.sh; do bash -n "$s" 2>/dev/null || { P_OK=no; echo "  syntax: $s"; }; done
+  if [ "$P_OK" = "yes" ] && grep -q 'visual-preflight.sh' commands/feature.md \
+     && grep -q 'quant-verify.sh' commands/feature.md \
+     && ! grep -q 'DEV_PID=\$!' commands/feature.md; then
+    pass "T51 pipeline bash decomposed into tested scripts"
+  else fail "T51 scripts unparsable or feature.md still carries inline gate bash"; fi
+else fail "T51 scripts/pipeline/ missing"; fi
+
+# T52 — quant-verify.sh honors the vacuous-verdict guard and pass^k (fixture-executed).
+if [ -f scripts/pipeline/quant-verify.sh ] && bash scripts/check-fixtures/run-quant-fixture.sh >/dev/null 2>&1; then
+  pass "T52 quant-verify fixture: zero checks in required → partial; failing seed → failed"
+else fail "T52 quant-verify script missing or fixture contract broken"; fi
+
+# T53 — critic report ends with a machine verdict block; commands parse it.
+if grep -q 'Machine verdict' agents/senior-critic.md \
+   && grep -q '"status": "concerns"' agents/senior-critic.md \
+   && grep -q 'status: concerns' commands/feature.md; then
+  pass "T53 machine-readable critic verdict + orchestrator branch"
+else fail "T53 gate outcomes still prose-only"; fi
+
+# T54 — /resume ships (10th command), derives phase from artifacts, not just the cache.
+if [ -f commands/resume.md ] && grep -qi 'derive\|artifact' commands/resume.md \
+   && grep -q 'runs/current.json' commands/resume.md \
+   && grep -q 'runs/current.json' commands/feature.md; then
+  pass "T54 /resume + run-state cache updated by /feature"
+else fail "T54 pipeline runs still die with the session"; fi
+
+# T55 — playwright pinned (no @latest anywhere in commands/).
+if grep -rq '@playwright/mcp@latest' commands/ assets/; then
+  fail "T55 @playwright/mcp still unpinned"
+else grep -rq '@playwright/mcp@0' commands/init.md && pass "T55 playwright MCP version pinned" \
+  || fail "T55 playwright registration missing a pinned version"; fi
+
+# T56 — layer-status banner: script exists and is wired into ground + final report.
+if [ -f scripts/pipeline/layer-status.sh ] && [ "$(grep -c 'layer-status' commands/feature.md)" -ge 2 ]; then
+  pass "T56 layer-status probed at ground and reported at finish"
+else fail "T56 six-layer degradation still silent"; fi
+
+# T57 — promptfoo skeleton: config + fixture project + scenario for the playback halt.
+if [ -f tests/promptfoo/promptfooconfig.yaml ] && [ -d tests/promptfoo/fixtures/miniproj ] \
+   && grep -qi 'playback\|Approved by user' tests/promptfoo/promptfooconfig.yaml; then
+  pass "T57 promptfoo behavioral skeleton present"
+else fail "T57 no behavioral CI skeleton"; fi
 
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi

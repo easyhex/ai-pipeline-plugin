@@ -11,6 +11,7 @@ argument-hint: "<bug description>"
 
 1. Master Plan must exist (same check as `/feature`).
 2. Generate `$SLUG` as in `/feature`, but prefix with `fix-`: `YYYY-MM-DD-fix-<slug>`.
+2b. Run-state: same as `/feature` pre-flight step 3 (create `docs/superpowers/runs/current.json`; refuse if one is in flight; update `.phase` at boundaries; delete at the final phase).
 3. Announce: "Starting /fix pipeline for: <description>. Will debug, fix, then write a lesson file."
 
 ---

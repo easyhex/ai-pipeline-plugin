@@ -24,6 +24,7 @@ This command runs the **same pipeline as `/feature`** (all phases, including the
    - If no shipped features → STOP. Print: "Nothing has shipped yet. Use `/feature` to build, not `/improve`."
 
 3. Generate `$SLUG` as in `/feature`.
+3b. Run-state: same as `/feature` pre-flight step 3.
 
 4. Announce: "Starting /improve pipeline for: <description>. Will modify existing behavior only — if work expands to new feature, will stop and redirect."
 
