@@ -44,6 +44,9 @@ Source: User decisions #N | assumption
 ## Analogs considered
 <per relevant row of docs/analysis/analogs.md: what they do, what we copy/avoid — or "none relevant">
 
+## Success criteria
+<observable, measurable, each with a check-by condition — how reality will falsify this feature after it ships. Math flavor: "residuals on dataset X below Y, re-checked at 10× scale". `/validate` asks for evidence against exactly these lines; a feature without them ships unfalsifiable.>
+
 ## Test plan / seams
 <the invariants, tolerances, and tests that will prove the work — these are what the playback digest plays back as (e)>
 

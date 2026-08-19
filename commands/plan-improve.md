@@ -34,6 +34,7 @@ The user request maps to one or more of these change types:
 - **F** — retiring or updating a `docs/risks.md` row (move Open → Retired with resolution)
 - **G** — updating `docs/analysis/analogs.md` or `docs/glossary.md`
 - **H** — updating `docs/model.md` (mathematical model, invariants, accuracy targets — compute classes)
+- **I** — recording or revisiting a deliberate refusal in `docs/analysis/out-of-scope.md`
 
 Identify which type(s). If unclear, put the question to the user in the frontier-round format (❓ + ➡️ recommended answer).
 

@@ -37,7 +37,8 @@ Read in full:
 - `docs/architecture.md`
 - `docs/features.md`
 - `docs/roadmap.md`
-- Every file under `.claude/lessons/`
+- `docs-meta/DISTILLED.md` (if it exists) FIRST — compiled lesson rules; then only raw lessons newer than `docs-meta/.lesson-cursor` (the undistilled tail); no cursor → every file under `.claude/lessons/`
+- `docs/analysis/out-of-scope.md` — deliberate refusals; do not re-propose a recorded concept without addressing its reason
 - `docs/model.md` (when it exists — compute classes): the mathematical ground truth this feature must respect (assumptions, invariants, accuracy targets)
 - `docs/glossary.md` (use its terms; a term used contrary to the glossary is a defect)
 - `docs/risks.md` — note every `open` risk whose scope plausibly matches this work
@@ -99,7 +100,7 @@ The output is a spec. Save it to:
 docs/superpowers/specs/<SLUG>.md
 ```
 
-**Mandatory spec shape — `docs-meta/SPEC_FORMAT.md` is the schema** (add any part the brainstorm output lacks): `weight:` frontmatter; `## User decisions (verbatim)`; `## Assumptions (machine, unconfirmed)`; `## Out of scope (confirmed)`; `## Functional requirements` (FR-NN, each with an EARS acceptance criterion — mandatory at standard/deep); `## Non-functional requirements` (NFR table: threshold WITH units, proving command, counter-metric); `## Analogs considered`; `## Test plan / seams`; `## URLs to verify` (frontend only). Prose in the conversation's language; IDs/statuses/markers always English.
+**Mandatory spec shape — `docs-meta/SPEC_FORMAT.md` is the schema** (add any part the brainstorm output lacks): `weight:` frontmatter; `## User decisions (verbatim)`; `## Assumptions (machine, unconfirmed)`; `## Out of scope (confirmed)`; `## Functional requirements` (FR-NN, each with an EARS acceptance criterion — mandatory at standard/deep); `## Non-functional requirements` (NFR table: threshold WITH units, proving command, counter-metric); `## Analogs considered`; `## Success criteria` (observable, measurable, check-by — /validate will ask reality about exactly these); `## Test plan / seams`; `## URLs to verify` (frontend only). Prose in the conversation's language; IDs/statuses/markers always English.
 
 **Frontend hint (NEW):** If the project has a frontend (`package.json` deps include `react|vue|svelte|next|nuxt|@angular/core|solid-js|preact|@builder.io/qwik|astro`, OR a root `index.html` exists alongside `package.json`), the spec MUST include a section:
 
@@ -162,7 +163,8 @@ Present the decision digest and WAIT for explicit approval. This gate runs at ev
 - On approval, append to the spec file: `**Approved by user:** YYYY-MM-DD (weight: <weight>)`.
 - On approval, mint the feature's ID and requirements file:
   - `F_ID` = next unused `F-NNN` across `docs/features.md`, `docs/requirements/` filenames, and `docs/TRACEABILITY.md` (all three — an abandoned or parallel run must never double-mint).
-  - Create `docs/requirements/<F_ID>-<slug>.md` per `docs-meta/REQUIREMENTS_FORMAT.md` from the approved spec: copy FR/NFR blocks, give every requirement a `mid:` (`uuidgen | tr A-F a-f`), `status: in_progress` in the frontmatter, source lines pointing at the spec's User decisions.
+  - Create `docs/requirements/<F_ID>-<slug>.md` per `docs-meta/REQUIREMENTS_FORMAT.md` from the approved spec: copy FR/NFR blocks AND the Success criteria table (all `unchecked`), give every requirement a `mid:` (`uuidgen | tr A-F a-f`), `status: in_progress` in the frontmatter, source lines pointing at the spec's User decisions.
+  - Out-of-scope KB: any "Out of scope (confirmed)" item that is a CONCEPT beyond this one feature → append a row to `docs/analysis/out-of-scope.md` (concept, durable reason, date, this slug); feature-local exclusions stay in the spec.
   - Commit the approval durably (also makes both files visible inside a later worktree):
     ```bash
     git add "docs/superpowers/specs/<SLUG>.md" "docs/requirements/<F_ID>-<slug>.md"
@@ -261,6 +263,8 @@ Gate: 2
 ```
 
 Critic saves report, returns one-line summary.
+
+**Fresh-context verification (before findings reach the user):** if the draft report has any Critical finding, or the run weight is `deep`, dispatch the senior-critic again in **verification mode** on the saved report (it re-reads only the cited evidence, drops what does not reproduce, rewrites the counts and the json verdict). The decision below branches on the VERIFIED report.
 
 **Auto-write suggested memories (NEW):**
 
