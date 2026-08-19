@@ -10,7 +10,7 @@ argument-hint: "<feature id or slug to deprecate, and why>"
 ## Pre-flight
 
 1. Target must exist: a `docs/requirements/F-*.md` with `status: shipped` matching `$ARGUMENTS`. Ambiguous → one ❓ with a ➡️ recommendation.
-2. Run-state: same as `/feature` pre-flight step 3 (slug `YYYY-MM-DD-deprecate-<slug>`; `.phase` uses /feature-equivalent ids).
+2. Run-state: same as `/feature` pre-flight step 3 (slug `YYYY-MM-DD-deprecate-<slug>`); `.phase` uses /feature-equivalent ids: impact scan=1, interview/playback=2–3.5, migration plan=4, removal TDD=7, gate-2=8, verify=9 (9b/9c inside), finish=10, close-out=11.
 
 ## Phase 1: Impact scan (facts — never questions)
 
@@ -32,7 +32,7 @@ Frontier round: what replaces it (or nothing) / migration window / data migratio
 
 ## Phase 4: Remove via the standard loop
 
-beads tasks per migration-plan step → TDD loop (tests updated FIRST to the new contract — deleting a test here is legitimate ONLY when the migration plan names it) → **critic gate-2 with the intended-break preamble:** "This run implements the approved migration plan at <path>; behavior breaks listed there are deliberate — review the MIGRATION (complete? dependents covered? rollback real?) and flag any break NOT listed in the plan as Critical." → verify (9/9b/9c as inherited) → finish (merge/PR, no push).
+beads tasks per migration-plan step → TDD loop (tests updated FIRST to the new contract — deleting a test here is legitimate ONLY when the migration plan names it) → **critic gate-2 with the intended-break preamble:** "This run implements the approved migration plan at <path>; behavior breaks listed there are deliberate — review the MIGRATION (complete? dependents covered? rollback real?) and flag any break NOT listed in the plan as Critical." → verify (9/9b/9c as inherited) → finish (merge/PR, no push). When gate-2 dispatches fresh-context verification, its prompt MUST include the migration-plan path — a draft finding like "regression: deleted test Y" is disproved by the plan naming test Y, and the verifier cannot know that from the cited evidence alone.
 
 ## Phase 5: Close out
 

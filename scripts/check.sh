@@ -488,7 +488,8 @@ else fail "T60 non-additive change (deprecation/breaking) still inexpressible"; 
 if grep -q 'distill' commands/lesson.md \
    && grep -q 'lesson-cursor' commands/lesson.md \
    && grep -q 'DISTILLED' commands/lesson.md \
-   && grep -q 'DISTILLED' commands/feature.md; then
+   && grep -q 'DISTILLED' commands/feature.md \
+   && grep -q 'DISTILLED' commands/fix.md; then
   pass "T61 lessons compile into rules (cursor + DISTILLED.md, ground-read)"
 else fail "T61 lessons still accumulate linearly with no distillation"; fi
 
@@ -503,7 +504,8 @@ else fail "T62 unreproduced critic findings still reach the user"; fi
 if [ -f assets/templates/out-of-scope.md ] \
    && grep -q 'out-of-scope' commands/feature.md \
    && grep -q 'out-of-scope' commands/init.md \
-   && grep -q 'out-of-scope' agents/senior-critic.md; then
+   && grep -q 'out-of-scope' agents/senior-critic.md \
+   && grep -q 'out-of-scope' commands/plan-improve.md; then
   pass "T63 deliberate refusals persist (out-of-scope KB)"
 else fail "T63 rejected concepts get re-litigated forever"; fi
 

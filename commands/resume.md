@@ -9,7 +9,7 @@ A session death, /clear, or compaction mid-run leaves artifacts on disk and a ca
 
 ## Phase 1: Locate the run
 
-1. `SLUG` = `$ARGUMENTS` if given, else `.slug` from `docs/superpowers/runs/current.json`, else the newest spec under `docs/superpowers/specs/`. Nothing found → STOP: "no run to resume."
+1. `SLUG` = `$ARGUMENTS` if given, else `.slug` from `docs/superpowers/runs/current.json`, else the newest spec under `docs/superpowers/specs/` OR migration plan `docs/superpowers/plans/*-migration.md` (deprecate runs). Nothing found → STOP: "no run to resume."
 2. Read the cache (`docs/superpowers/runs/current.json`) if present — note its `.phase`, `.f_id`, `.branch`, but do not trust it yet. Read `precompact-snapshot.json` and `precompact-ledger-tail.jsonl` if present (context from before a compaction).
 
 ## Phase 2: Derive the true phase from artifacts
@@ -18,10 +18,10 @@ Walk the artifact DAG **top-down and resume at the FIRST UNSATISFIED row** (neve
 
 | Evidence on disk | Phase completed |
 |---|---|
-| `docs/superpowers/specs/<SLUG>.md` exists (or `-diagnosis.md` for fix runs) | 2 (interview + spec) |
+| `docs/superpowers/specs/<SLUG>.md` exists (fix runs: `-diagnosis.md`; deprecate runs: `docs/superpowers/plans/<SLUG>-migration.md` is the spec-equivalent) | 2 (interview + spec) |
 | gate-1 report in `docs/superpowers/critic-reports/` | 3 |
-| spec contains `**Approved by user:**` AND `docs/requirements/F-*-<slug>.md` exists (fix runs: the diagnosis's `**Approved by user:**` line alone — no requirements file exists for a bug fix) | 3.5 |
-| `docs/superpowers/plans/<SLUG>.md` exists | 4 |
+| spec contains `**Approved by user:**` AND `docs/requirements/F-*-<slug>.md` exists (fix runs: the diagnosis's approval line alone; deprecate runs: the migration plan's approval line alone — neither mints a requirements file) | 3.5 |
+| `docs/superpowers/plans/<SLUG>.md` exists (deprecate runs: the migration plan doubles as the plan — this row is satisfied together with 3.5) | 4 |
 | beads epic + tasks exist (`bd list` matching the feature) | 5 |
 | the work branch exists — `feature/<slug>` (also for /fix runs, which inherit the prefix) or `improve/<slug>` (improve.md declares its own) | 6 |
 | `bd ready` shows no open tasks for the epic | 7 |

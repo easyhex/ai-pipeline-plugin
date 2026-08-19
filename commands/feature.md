@@ -123,7 +123,7 @@ Use the senior-critic subagent to review this spec at gate 1.
 Inputs:
   - Spec: docs/superpowers/specs/<SLUG>.md  (schema: docs-meta/SPEC_FORMAT.md)
   - docs/architecture.md, docs/features.md, docs/roadmap.md, docs/risks.md
-  - docs/glossary.md, docs/analysis/analogs.md
+  - docs/glossary.md, docs/analysis/analogs.md, docs/analysis/out-of-scope.md
   - docs/model.md (when it exists) and the project class: jq -r '.pipeline.project_class' .claude/settings.json
   - All files under .claude/lessons/
   - Original user request: "<$ARGUMENTS>"
@@ -264,7 +264,7 @@ Gate: 2
 
 Critic saves report, returns one-line summary.
 
-**Fresh-context verification (before findings reach the user):** if the draft report has any Critical finding, or the run weight is `deep`, dispatch the senior-critic again in **verification mode** on the saved report (it re-reads only the cited evidence, drops what does not reproduce, rewrites the counts and the json verdict). The decision below branches on the VERIFIED report.
+**Fresh-context verification (before findings reach the user):** if the draft report's final json verdict has `critical > 0`, or the run weight is `deep`, dispatch the senior-critic again in **verification mode** on the saved report (it re-reads only the cited evidence, drops what does not reproduce, rewrites the counts and the json verdict). The decision below branches on the VERIFIED report.
 
 **Auto-write suggested memories (NEW):**
 

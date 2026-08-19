@@ -1,0 +1,3 @@
+An enforcement hook must accept EVERY outcome the command decision protocol documents (continue / address / override) — a hook that recognizes only one of them deadlocks the others. Hooks and prose are two authorities over the same gate and diverge silently. Mechanism: gate decisions are recorded in the critic report as an anchored line `**Gate decision:** <continue|override — reason> (user, date)`; the pre-merge hook resolves on that anchor, never on keywords inside finding text.
+
+Captured by senior-critic at gate-2 of feature/v0.7-mechanism on 2026-08-19 (the hook empirically blocked the pipeline's own Phase 10 merge after a documented `continue`). Guard: scripts/check-fixtures/run-hooks-fixture.sh.

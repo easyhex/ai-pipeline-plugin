@@ -1,0 +1,3 @@
+Every gate outcome — including SKIP — must write its verdict artifact ({"status":"skipped","blocking":false} verdict.json). Harness hooks branch on artifact existence, not on the prose reason for absence: without a file, "skipped honestly" and "died mid-verify" are indistinguishable, and the Stop gate blocked every healthy skip-path run. Corollary of [[vacuous-verdict-guard]].
+
+Captured by senior-critic at gate-2 of feature/v0.7-mechanism on 2026-08-19. Guard: run-hooks-fixture.sh (skipped verdict satisfies the Stop gate) + the Skip rule block in feature.md 9b/9c.

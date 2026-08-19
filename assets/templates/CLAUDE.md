@@ -51,7 +51,8 @@ All four carry `doc_version` + a `## Change history` table — every apply bumps
 - Stored in `.claude/lessons/` as one markdown file per lesson
 - Schema: `docs-meta/LESSON_FORMAT.md`
 - Critic agent reads them at every gate and explicitly cites which apply
-- Never auto-delete; user prunes manually
+- `/lesson distill` compiles them into `docs-meta/DISTILLED.md`; ground reads the rules first and only the undistilled tail raw (critic gates and `/fix` still read everything)
+- Never auto-delete; user prunes manually — and distillation never hides a lesson (un-clustered ones are listed in DISTILLED.md)
 
 ## Memories (Serena)
 

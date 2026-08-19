@@ -40,7 +40,7 @@ In addition to the standard ground:
 - Run `Grep` for keywords from `$ARGUMENTS` across `src/` (or equivalent source dir) to locate the affected code paths.
 - List the specific files that will be touched. If the list is empty, STOP and tell the user: "I can't locate existing code matching this description. Either the feature isn't shipped, or rephrase the request."
 
-Then proceed with the standard ground steps (architecture.md, lessons, Context7).
+Then proceed with the standard ground steps (architecture.md, DISTILLED rules first + the undistilled lesson tail, out-of-scope KB, Context7 — same read order as `/feature` Phase 1).
 
 **Memory grounding (NEW):** Same as `/feature.md` Phase 1 — call `mcp__serena__list_memories` and `mcp__serena__read_memory` for slug matches. Add `Memory grounding: N memories loaded` line to the internal summary. If Serena MCP not running, skip with note `Memory grounding: skipped (Serena unavailable)`.
 
@@ -53,7 +53,7 @@ All other phases run identically to `/feature`. Reference the `ai-pipeline:featu
 **Differences in specific phases:**
 
 - **Phase 3.5 (Playback gate) — MINT DELTA, read carefully:**
-  - **Amend path** (the update-vs-new rubric said amend): do NOT mint — no new F-ID, no new requirements file. The digest plays back the amended FR/NFR set of the EXISTING `docs/requirements/F-*.md`. On approval: apply the amendment to that file NOW (amended blocks get `status: changed`, `BREAKING` rows where intended, a Change-history row with this slug; mids never change), then commit the spec + amended file (`docs(spec): approved — <slug> (amends <F_ID>)`). Amending before gate-2 is what lets the critic's requirements-drift check compare the diff against current truth instead of firing on every improvement.
+  - **Amend path** (the update-vs-new rubric said amend): do NOT mint — no new F-ID, no new requirements file. The digest plays back the amended FR/NFR set of the EXISTING `docs/requirements/F-*.md`. On approval: apply the amendment to that file NOW (amended blocks get `status: changed`, `BREAKING` rows where intended, a Change-history row with this slug; mids never change; any Success-criteria row covering the amended behavior is REOPENED — status back to `unchecked` with note `reopened by <slug>` — so /validate never reports `met` on pre-amendment evidence), then commit the spec + amended file (`docs(spec): approved — <slug> (amends <F_ID>)`). Amending before gate-2 is what lets the critic's requirements-drift check compare the diff against current truth instead of firing on every improvement.
   - **Successor path** (rubric said new): mint per `/feature`'s rule; the successor file carries `supersedes: <old F_ID>`, the old file gets `superseded_by:`; in `docs/features.md` do NOT add a feature line — append a sub-bullet under the existing feature: `— requirements superseded by <new F_ID> (YYYY-MM-DD)`.
 - **Phase 5 (Beads tasks):** Update `docs/features.md` should NOT add a new feature. Instead, append a note to the existing feature's line: `(behavior change in progress: <slug>)`.
 - **Phase 8 (Critic gate-2):** The critic should be told this is an improvement; it pays special attention to "did this break the existing behavior the feature already shipped?" and "are there regression tests?"
