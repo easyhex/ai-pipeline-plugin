@@ -8,7 +8,7 @@ set -u
 OUT=""
 if ls .claude/lessons/*.md >/dev/null 2>&1; then
   N=$(ls .claude/lessons/*.md 2>/dev/null | wc -l | tr -d ' ')
-  TRIGGERS=$(grep -h '^trigger:' .claude/lessons/*.md 2>/dev/null | head -12 | sed 's/^trigger: */• /' | tr '\n' ' ')
+  TRIGGERS=$(grep -h '^trigger:' .claude/lessons/*.md 2>/dev/null | head -12 | cut -c1-120 | sed 's/^trigger: */• /' | tr '\n' ' ')
   OUT="Lessons (${N}): ${TRIGGERS}"
 fi
 if [ -d .serena/memories ]; then

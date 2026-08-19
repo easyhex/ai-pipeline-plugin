@@ -124,6 +124,7 @@ Settings live under `.claude/settings.json` → `pipeline.quant_verify`:
 | `seeds` | `[0]` | seed set exported as `SEED` to every proving command; pass^k across all of them |
 | `budgets` | `[]` | global {name, command, threshold} checks run alongside NFR commands |
 | `property_test_command` / `benchmark_command` / `tolerance_report_command` | `""` | project-wide checks (empty = skip) |
-| `mutation` / `mutation_command` / `mutation_threshold` | `advisory` / `""` / `80` | `off` / `advisory` (survivors → Important findings) / `required` (score below threshold fails the gate; empty command with `required` → verdict `partial`) |
+| `mutation` / `mutation_command` / `mutation_threshold` | `advisory` / `""` / `80` | `off` / `advisory` (survivors → Important findings) / `required` (empty command → verdict `partial`); the command receives `MUTATION_THRESHOLD` and must exit nonzero when the score falls below it |
+| `test_runner` | `""` | runner for `verify.method: Test` evidence ids (e.g. `pytest -k`); empty while Test evidence is declared → those requirements count unexecuted (`partial`) |
 
 `pipeline.project_class` (written by `/init`) drives the `by_class` resolution and the visual-gate default (compute classes and `cli` skip visual).

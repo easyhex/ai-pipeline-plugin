@@ -410,6 +410,12 @@ if grep -q 'stop_hook_active' scripts/hooks/stop-verdict-gate.sh 2>/dev/null; th
   pass "T50 Stop hook blocks at most once"
 else fail "T50 Stop hook can loop a session shut"; fi
 
+# T58 — hooks BEHAVE per contract (fixture-executed stdin payloads): decision-protocol
+# parity, word-boundary matching, skip-verdict satisfaction, loop safety, ledger JSONL.
+if bash scripts/check-fixtures/run-hooks-fixture.sh >/dev/null 2>&1; then
+  pass "T58 hook fixtures: blocker parity, stop gate, ledger — all behave"
+else fail "T58 a hook violates its behavioral contract (run scripts/check-fixtures/run-hooks-fixture.sh)"; fi
+
 # T51 — pipeline bash lives in scripts, not markdown: every scripts/pipeline/*.sh parses,
 # feature.md calls them, and the old inline dev-server block is gone from feature.md.
 if ls scripts/pipeline/*.sh >/dev/null 2>&1; then

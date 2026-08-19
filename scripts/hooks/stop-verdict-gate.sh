@@ -19,5 +19,5 @@ esac
 for G in visual quant; do
   [ -f "docs/superpowers/${G}-evidence/${SLUG}/verdict.json" ] && exit 0
 done
-echo "ai-pipeline: run '$SLUG' is at phase $PHASE with no gate verdict written. Finish the verify phase (write the verdict), or abandon the run by deleting docs/superpowers/runs/current.json." >&2
+echo "ai-pipeline: run '$SLUG' is at phase $PHASE with no gate verdict written (every gate outcome, including skip, writes verdict.json). Finish the verify phase, or /resume next session; delete docs/superpowers/runs/current.json only to abandon the run." >&2
 exit 2

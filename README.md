@@ -86,11 +86,12 @@ claude mcp add --scope user serena -- serena start-mcp-server --context claude-c
 
 ## Architecture
 
-The pipeline has three layers:
+The pipeline has four auto-loaded components:
 
 1. **10 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
 2. **`senior-critic` subagent** (in `agents/`) — auto-loaded, invoked at two gates per feature
-3. **Per-project templates** (in `assets/templates/`) — written into your project by `/init`
+3. **Enforcement hooks** (in `hooks/` + `scripts/hooks/`) — harness-level gates that no-op outside active pipeline runs
+4. **Per-project templates** (in `assets/templates/`) — written into your project by `/init`
 
 Per-project files written by `/init`:
 

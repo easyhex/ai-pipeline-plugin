@@ -10,7 +10,7 @@ command -v jq >/dev/null 2>&1 || exit 0
 IN=$(cat 2>/dev/null || true)
 [ -n "$IN" ] || exit 0
 CMD=$(printf '%s' "$IN" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
-printf '%s' "$CMD" | grep -qE 'git merge|git push|gh pr create' || exit 0
+printf '%s' "$CMD" | grep -qE 'git (merge|push)( |$)|gh pr create' || exit 0
 SLUG=$(jq -r '.slug // ""' "$RUN" 2>/dev/null || echo "")
 [ -n "$SLUG" ] || exit 0
 
@@ -33,8 +33,10 @@ done
 R=$(ls -t docs/superpowers/critic-reports/*"${SLUG}"*.md 2>/dev/null | head -1 || true)
 if [ -n "$R" ] && [ -f "$R" ]; then
   CRIT=$(awk '/^## Critical/{f=1; next} /^## /{f=0} f && /^- /' "$R" | head -1)
-  if [ -n "$CRIT" ] && ! grep -qi 'override' "$R"; then
-    block "unresolved Critical finding in $(basename "$R") — address it or override with a written reason (appended to the report + docs/risks.md) before merging"
+  # Resolution = an ANCHORED decision record the orchestrator appends on continue/override
+  # ("**Gate decision:** ..."). A finding merely containing the word "override" resolves nothing.
+  if [ -n "$CRIT" ] && ! grep -q '^\*\*Gate decision:\*\*' "$R"; then
+    block "unresolved Critical finding in $(basename "$R") — decide continue/address/override; the decision is recorded in the report as '**Gate decision:** ...'"
   fi
 fi
 exit 0

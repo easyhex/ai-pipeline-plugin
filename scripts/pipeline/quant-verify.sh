@@ -23,6 +23,31 @@ if [ "$REQ" != "-" ] && [ -f "$REQ" ]; then
         printf 'nfr-%d\t%s\n' "$(($(wc -l < "$CHECKS") + 1))" "$c" >> "$CHECKS"
       done
 fi
+# verify.method declarations (v0.6 contract): Test-method evidence runs via the
+# configured test runner; Analysis/Inspection/Review evidence must EXIST as a file.
+# A declared-but-unrunnable/missing item marks the run partial (anti-overclaim).
+UNEXECUTED=0
+RUNNER=$(jq -r '.pipeline.quant_verify.test_runner // ""' "$S" 2>/dev/null || echo "")
+if [ "$REQ" != "-" ] && [ -f "$REQ" ]; then
+  grep -o 'verify: {[^}]*}' "$REQ" 2>/dev/null | while IFS= read -r v; do
+    m=$(printf '%s' "$v" | sed -n 's/.*method: *\([A-Za-z]*\).*/\1/p')
+    ev=$(printf '%s' "$v" | sed -n 's/.*evidence: *\([^,}]*\).*/\1/p' | sed 's/ *$//')
+    case "$m" in
+      Test)
+        if [ -n "$RUNNER" ] && [ -n "$ev" ]; then printf 'verify:%s\t%s %s\n' "$ev" "$RUNNER" "$ev" >> "$CHECKS"
+        elif [ -n "$ev" ]; then echo "unexecuted: Test evidence '$ev' (set pipeline.quant_verify.test_runner)" >> "$E/.unexec"; fi ;;
+      Analysis|Inspection|Review)
+        [ -n "$ev" ] && [ ! -e "$ev" ] && echo "unexecuted: $m evidence file missing: $ev" >> "$E/.unexec" ;;
+    esac
+  done
+fi
+# NFR blocks without any proving command → Important note
+if [ "$REQ" != "-" ] && [ -f "$REQ" ]; then
+  NNFR=$(grep -c '^### NFR-' "$REQ" 2>/dev/null || echo 0)
+  NCMD=$(grep -c 'Proving command:' "$REQ" 2>/dev/null || echo 0)
+  [ "${NNFR:-0}" -gt "${NCMD:-0}" ] && echo "- $((NNFR - NCMD)) NFR(s) declare no proving command (Important finding)" >> "$E/.unexec"
+fi
+
 # global commands
 for k in property_test_command benchmark_command tolerance_report_command; do
   c=$(jq -r ".pipeline.quant_verify.$k // \"\"" "$S" 2>/dev/null || echo "")
@@ -42,9 +67,10 @@ NOTES=""
 RESULTS=""
 
 if [ "${TOTAL:-0}" -eq 0 ]; then
-  # vacuous-verdict guard: zero collected checks in required mode is never "verified"
-  if [ "$MODE" = "required" ]; then STATUS=partial; fi
-  NOTES="- no checks declared (Important finding: an empty manifest proves nothing)"
+  # vacuous-verdict guard: an empty manifest proves nothing in ANY mode —
+  # required → partial; best_effort → skipped (honest, non-blocking), never "verified"
+  if [ "$MODE" = "required" ]; then STATUS=partial; else STATUS=skipped; fi
+  NOTES="- no checks declared (an empty manifest proves nothing)"
 else
   : > "$E/checks.log"
   while IFS="$(printf '\t')" read -r NAME CMD; do
@@ -68,9 +94,11 @@ fi
 # mutation sub-step
 MUT=$(jq -r '.pipeline.quant_verify.mutation // "advisory"' "$S" 2>/dev/null || echo advisory)
 MUTC=$(jq -r '.pipeline.quant_verify.mutation_command // ""' "$S" 2>/dev/null || echo "")
+MUTT=$(jq -r '.pipeline.quant_verify.mutation_threshold // 80' "$S" 2>/dev/null || echo 80)
 if [ "$MUT" != "off" ]; then
   if [ -n "$MUTC" ]; then
-    if ! bash -c "$MUTC" > "$E/mutation.log" 2>&1; then
+    # the command receives MUTATION_THRESHOLD and must exit nonzero when the score falls below it
+    if ! MUTATION_THRESHOLD="$MUTT" bash -c "$MUTC" > "$E/mutation.log" 2>&1; then
       if [ "$MUT" = "required" ]; then STATUS=failed; fi
       NOTES="$NOTES
 - mutation survivors / run failure (see mutation.log)$( [ "$MUT" = "advisory" ] && echo ' — advisory: Important finding, not a block')"
@@ -81,6 +109,13 @@ if [ "$MUT" != "off" ]; then
 - mutation: required but mutation_command is empty — a declared check that cannot execute"
   fi
 fi
+
+if [ -s "$E/.unexec" ]; then
+  [ "$STATUS" = "verified" ] && STATUS=partial
+  NOTES="$NOTES
+$(sed 's/^/- /' "$E/.unexec" 2>/dev/null | sed 's/^- -/-/')"
+fi
+rm -f "$E/.unexec"
 
 {
   echo "# Run manifest — $SLUG"

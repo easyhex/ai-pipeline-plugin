@@ -24,7 +24,7 @@ argument-hint: "<feature description>"
    mkdir -p docs/superpowers/runs
    printf '{"slug":"<SLUG>","phase":"1","started":"%s"}\n' "$(date -Iseconds 2>/dev/null || date)" > docs/superpowers/runs/current.json
    ```
-   Update `.phase` at EVERY phase boundary (`jq '.phase="<N>"' … > tmp && mv`); Phase 3.5 adds `.f_id`, `.approvals.spec=true`; Phase 6 adds `.branch`; Phase 11 deletes the file (run complete). This cache powers `/resume` and the plugin's enforcement hooks — but artifacts on disk remain the truth.
+   Update `.phase` and `.updated` (ISO date) at EVERY phase boundary (`jq '.phase="<N>"' … > tmp && mv`); Phase 3.5 adds `.f_id`, `.approvals.spec=true`; Phase 6 adds `.branch`; Phase 11 deletes the file (run complete). This cache powers `/resume` and the plugin's enforcement hooks — but artifacts on disk remain the truth.
 
 4. **Announce intent:**
    - Tell the user: "Starting /feature pipeline for: <description>. Slug: <SLUG>. I'll interview you until we share an understanding of what to build, play the spec back for your sign-off, then run autonomously through plan → TDD → critic → verify → finish. After sign-off I'll only stop when the critic surfaces findings that need your decision, or on failures."
@@ -136,8 +136,8 @@ The critic saves a report and returns a one-line summary like:
 **Decision** — branch on the report's final fenced json verdict (`{"gate", "critical", "important", "nice", "status"}`; the LAST fenced json block in the report is the contract). Synchronous — wait for the user's answer; there are no timeouts:
 - `status: fail` (Critical > 0): present the findings, ask `continue / address / override`.
   - `address` → re-run Phase 2 with critic findings as additional input. Max 2 retries; if still Critical, put the decision to the user again.
-  - `override` → user must provide a written reason; append it to the report file AND append a `docs/risks.md` row (Open table: `R-NNN` next unused, date, Source = which gate, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
-  - `continue` → proceed.
+  - `override` → user must provide a written reason; append `**Gate decision:** override — <reason> (user, YYYY-MM-DD)` to the report file AND append a `docs/risks.md` row (Open table: `R-NNN` next unused, date, Source = which gate, finding, reason verbatim, review-by condition — ask for it with one ❓, link to the report).
+  - `continue` → append `**Gate decision:** continue (user, YYYY-MM-DD)` to the report file (the pre-merge hook requires a recorded decision for any report with Critical findings), then proceed.
 - `status: concerns` (Important-only): do NOT stop here — carry the Important findings, in full, into the Phase 3.5 playback digest (one consolidated stop).
 - `status: pass` (Nice-to-have only): proceed; mention the one-line summary.
 
@@ -253,6 +253,8 @@ Inputs:
   - Spec: docs/superpowers/specs/<SLUG>.md
   - Requirements file: docs/requirements/<F_ID>-<slug>.md
   - docs/architecture.md, docs/features.md, docs/risks.md
+  - docs/superpowers/runs/tool-ledger.jsonl — harness-recorded ground truth: a command the diff or spec claims was run that never appears here did not run
+  - The layer-status line (re-run scripts/pipeline/layer-status.sh)
   - All files under .claude/lessons/
 Slug: <SLUG>
 Gate: 2
@@ -283,8 +285,8 @@ Print a one-line summary: `Memories captured: <N> new, <M> updated, <P> skipped.
 **Decision** — branch on the report's final fenced json verdict (same contract as gate-1). Synchronous — wait; no timeouts:
 - `status: fail` (Critical > 0): present the findings, ask `continue / address / override`.
   - `address` → for each Critical/Important finding, run `bd create` to add a new task, then loop back to Phase 7 for those tasks. Max 2 cycles.
-  - `override` → require written reason in report AND append a `docs/risks.md` row (same protocol as gate-1).
-  - `continue` → proceed.
+  - `override` → append `**Gate decision:** override — <reason> (user, YYYY-MM-DD)` to the report AND append a `docs/risks.md` row (same protocol as gate-1).
+  - `continue` → append `**Gate decision:** continue (user, YYYY-MM-DD)` to the report, then proceed.
 - `status: concerns` (Important-only): present the Important findings (content, not just the count) and ask `continue / address`.
 - `status: pass`: proceed.
 
@@ -314,7 +316,14 @@ PIPE="$(ls -d "$HOME/.claude/plugins/cache/ai-pipeline-marketplace/ai-pipeline"/
 bash "$PIPE/detect-frontend.sh"    # prints HAS_FRONTEND=yes|no plus the rule that fired
 ```
 
-If `HAS_FRONTEND=no` → skip the visual sub-step and go directly to Phase 9c.
+**Skip rule (applies to EVERY visual skip below):** a skipped gate still writes its verdict — hooks branch on artifact existence, and "skipped honestly" must be distinguishable from "died mid-verify":
+
+```bash
+mkdir -p "docs/superpowers/visual-evidence/<SLUG>"
+printf '{"gate":"visual","slug":"<SLUG>","status":"skipped","blocking":false}\n' > "docs/superpowers/visual-evidence/<SLUG>/verdict.json"
+```
+
+If `HAS_FRONTEND=no` → write the skip verdict (above) and go directly to Phase 9c.
 
 **Preflight** (settings, Playwright MCP check, dev server, URL extraction). The spec file is resolved statelessly — prefer the /fix diagnosis when it exists:
 
@@ -324,7 +333,7 @@ SPEC_FILE="docs/superpowers/specs/<SLUG>.md"
 bash "$PIPE/visual-preflight.sh" "$SPEC_FILE"
 ```
 
-Read its output: `MODE`, `BASE_URL`, optional `SKIP_VISUAL`, optional `DEV_PID`, and the `URLS<<EOF … EOF` block. Exit 1 with `SKIP_VISUAL=fail` means a `required`-mode preflight failure → STOP. `SKIP_VISUAL=yes` → skip the visual sub-step and go to Phase 9c.
+Read its output: `MODE`, `BASE_URL`, optional `SKIP_VISUAL`, optional `DEV_PID`, and the `URLS<<EOF … EOF` block. Exit 1 with `SKIP_VISUAL=fail` means a `required`-mode preflight failure → STOP. `SKIP_VISUAL=yes` → write the skip verdict and go to Phase 9c.
 
 **Prepare evidence dirs and record the URL list** (the verdict script reads `urls.txt`):
 
@@ -346,6 +355,8 @@ printf '%s\n' <each URL from URLS> > "$EVIDENCE_DIR/urls.txt"
 
 ```bash
 PIPE="$(ls -d "$HOME/.claude/plugins/cache/ai-pipeline-marketplace/ai-pipeline"/*/ 2>/dev/null | sort -V | tail -1)scripts/pipeline"
+# MODE re-resolved HERE — never carried across bash blocks (command-bash-block-state)
+MODE=$(jq -r '.pipeline.visual_verify.mode // "required"' .claude/settings.json 2>/dev/null || echo required)
 bash "$PIPE/visual-verdict.sh" "<SLUG>" "$MODE"
 ```
 
@@ -356,11 +367,11 @@ bash "$PIPE/visual-verdict.sh" "<SLUG>" "$MODE"
 rm -f docs/superpowers/runs/dev-server.pid
 ```
 
-**Apply verdict** (from `$EVIDENCE_DIR/verdict.json`):
+**Apply verdict** — read `$EVIDENCE_DIR/verdict.json` (never a shell variable from another block):
 
-- `status: pass` → proceed to Phase 9c.
-- `status: fail` + `MODE=required` → STOP. Print `summary.md`. Do NOT merge (the plugin's pre-merge hook also blocks on this verdict).
-- `status: fail` + `MODE=best_effort` → warn, print summary, proceed to Phase 9c.
+- `status: pass` (or `skipped`) → proceed to Phase 9c.
+- `status: fail`, `blocking: true` → STOP. Print `summary.md`. Do NOT merge (the plugin's pre-merge hook also blocks on this verdict).
+- `status: fail`, `blocking: false` → warn, print summary, proceed to Phase 9c.
 
 ### Phase 9c: Quantitative verification (compute classes / declared NFRs)
 
@@ -374,11 +385,22 @@ if [ "$QMODE" = "by_class" ]; then
   case "$PCLASS" in numerical-library|simulation|data-pipeline) QMODE=required ;; *) QMODE=skip ;; esac
 fi
 REQ="docs/requirements/<F_ID>-<slug>.md"; [ -f "$REQ" ] || REQ="-"
-if [ "$QMODE" = "skip" ] && [ "$REQ" != "-" ] && grep -q 'Proving command:' "$REQ"; then QMODE=best_effort; fi
-if [ "$QMODE" = "skip" ]; then echo "quant gate: skipped (no checks declared)"; else bash "$PIPE/quant-verify.sh" "<SLUG>" "$REQ" "$QMODE"; fi
+# skip only when NOTHING is declared anywhere: NFR commands, global commands, budgets
+DECLARED=no
+{ [ "$REQ" != "-" ] && grep -q 'Proving command:' "$REQ"; } && DECLARED=yes
+[ "$(jq -r '(.pipeline.quant_verify.property_test_command // "") + (.pipeline.quant_verify.benchmark_command // "") + (.pipeline.quant_verify.tolerance_report_command // "")' .claude/settings.json 2>/dev/null)" != "" ] && DECLARED=yes
+[ "$(jq -r '.pipeline.quant_verify.budgets // [] | length' .claude/settings.json 2>/dev/null)" != "0" ] && DECLARED=yes
+[ "$QMODE" = "skip" ] && [ "$DECLARED" = "yes" ] && QMODE=best_effort
+if [ "$QMODE" = "skip" ]; then
+  mkdir -p "docs/superpowers/quant-evidence/<SLUG>"
+  printf '{"gate":"quant","slug":"<SLUG>","status":"skipped","blocking":false}\n' > "docs/superpowers/quant-evidence/<SLUG>/verdict.json"
+  echo "quant gate: skipped (no checks declared) — skip verdict written"
+else
+  bash "$PIPE/quant-verify.sh" "<SLUG>" "$REQ" "$QMODE"
+fi
 ```
 
-The script implements the whole contract: NFR proving commands + global commands + budgets, one run per seed with `SEED` exported (**pass^k** — deterministic oracles pass only when ALL seeds pass; empty `seeds` = one run without `SEED`; **pass@k** is reserved for NFRs explicitly declared statistical), the mutation sub-step per `pipeline.quant_verify.mutation` (advisory survivors → Important findings; `required` with empty `mutation_command` → `partial`; score below `mutation_threshold` fails), and the **anti-overclaim verdict**: `verified` only when every declared check executed and passed; declared-but-unexecuted → `partial` (**zero collected checks in `required` mode → `partial`, never `verified`** — an empty run-manifest proves nothing); any failure → `failed`. Evidence: `summary.md`, `run-manifest.md`, `verdict.json` under `docs/superpowers/quant-evidence/<SLUG>/`.
+The script implements: NFR proving commands + `verify.method` declarations (Test evidence runs via `pipeline.quant_verify.test_runner`; Analysis/Inspection/Review evidence files must exist; declared-but-unrunnable or missing → `partial`) + global commands + budgets, one run per seed with `SEED` exported (**pass^k** — deterministic oracles pass only when ALL seeds pass; empty `seeds` = one run without `SEED`; **pass@k** is reserved for NFRs explicitly declared statistical), the mutation sub-step per `pipeline.quant_verify.mutation` (advisory survivors → Important findings; `required` with empty `mutation_command` → `partial`; the command receives `MUTATION_THRESHOLD` from `pipeline.quant_verify.mutation_threshold` and must exit nonzero when the score falls below it), and the **anti-overclaim verdict**: `verified` only when every declared check executed and passed; declared-but-unexecuted → `partial` (**zero collected checks → `partial` in `required` mode, `skipped` in `best_effort` — never `verified`**: an empty run-manifest proves nothing); any failure → `failed`. Evidence: `summary.md`, `run-manifest.md`, `verdict.json` under `docs/superpowers/quant-evidence/<SLUG>/`.
 
 **Code-link audit (advisory, prose step):** scan the diff's source files for `@relation(F-*/FR-*)` markers; for every requirement `code:` entry recompute the symbol-body sha256 — a mismatch is recorded as a **suspect** link in summary.md (re-verify, not a block); public numerical functions in the diff without markers, and requirements with no linked code/test, become coverage notes. Cross-check claimed commands against the hook ledger `docs/superpowers/runs/tool-ledger.jsonl` — a check "run" that never appears in the harness ledger did not run.
 

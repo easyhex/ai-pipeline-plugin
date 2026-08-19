@@ -93,7 +93,7 @@ The plugin registers harness hooks that no-op outside an active pipeline run (`d
 | PreToolUse (Bash) | blocks `git merge` / `git push` / `gh pr create` while a blocking `verdict.json` (visual/quant) stands or the newest critic report has unresolved Critical findings without an override |
 | Stop | blocks session end ONCE while the run sits in phases 9–10 with no gate verdict written (`stop_hook_active` loop safety) |
 | PreCompact | snapshots run position + ledger tail before context destruction |
-| UserPromptSubmit | injects a compact digest (lessons index, memory names, active-run line) into every prompt |
+| UserPromptSubmit | injects a compact digest (lessons index, memory names, active-run line) into every prompt of every pipeline PROJECT (run or not — the only hook active outside runs) |
 
 Abandoning a run: delete `docs/superpowers/runs/current.json` — all hooks stand down.
 

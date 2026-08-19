@@ -31,7 +31,8 @@
       "tolerance_report_command": "",
       "mutation": "advisory",
       "mutation_command": "",
-      "mutation_threshold": 80
+      "mutation_threshold": 80,
+      "test_runner": ""
     },
     "visual_verify": {
       "mode": "required",

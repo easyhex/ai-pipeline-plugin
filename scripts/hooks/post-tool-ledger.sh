@@ -15,6 +15,6 @@ printf '%s' "$IN" | jq -c '{ts: (now | todate), tool: (.tool_name // ""), cmd: (
 # cap ~1MB, keep the newest half
 SZ=$(wc -c < "$LEDGER" 2>/dev/null | tr -d ' ' || echo 0)
 if [ "${SZ:-0}" -gt 1048576 ]; then
-  tail -c 524288 "$LEDGER" > "$LEDGER.tmp" 2>/dev/null && mv "$LEDGER.tmp" "$LEDGER"
+  tail -n 2000 "$LEDGER" > "$LEDGER.tmp" 2>/dev/null && mv "$LEDGER.tmp" "$LEDGER"   # line boundary — JSONL stays parsable
 fi
 exit 0

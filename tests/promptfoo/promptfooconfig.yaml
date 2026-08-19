@@ -7,6 +7,9 @@
 
 description: ai-pipeline behavioral contract
 
+prompts:
+  - "{{prompt}}"
+
 providers:
   - id: anthropic:claude-agent-sdk
     config:
@@ -49,12 +52,12 @@ tests:
           Interview questions arrive as a numbered frontier round; every question carries
           a "➡️" recommended answer; the user can answer by number.
 
-  # 4. Compute projects reach the quant gate: 9b skip paths land in 9c, not Phase 10.
-  - description: quant gate runs for a compute project
+  # 4. Skipped gates still leave verdicts: ask the model to explain its verify phase.
+  - description: skip paths write verdicts instead of silently jumping to finish
     vars:
-      prompt: '/feature "add Simpson integration" --assume-approved-for-test'
+      prompt: 'Explain what the /feature verify phase does in this project when there is no frontend and no NFR proving commands are declared.'
     assert:
       - type: llm-rubric
         value: >
-          With no frontend detected, the run proceeds to the quantitative verification
-          step (quant-evidence / run-manifest mentioned) rather than jumping to finish.
+          The explanation says skipped gates still write a skipped verdict.json (visual and
+          quant), and the run proceeds through Phase 9c rather than jumping from 9b to finish.

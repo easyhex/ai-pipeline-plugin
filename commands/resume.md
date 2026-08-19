@@ -14,19 +14,19 @@ A session death, /clear, or compaction mid-run leaves artifacts on disk and a ca
 
 ## Phase 2: Derive the true phase from artifacts
 
-Walk the artifact DAG — the LAST satisfied row is the completed phase; resume at the next one:
+Walk the artifact DAG **top-down and resume at the FIRST UNSATISFIED row** (never "highest satisfied": after a gate-2 `address` loop the gate-2 report exists while Phase-7 tasks are reopened — the open tasks win):
 
 | Evidence on disk | Phase completed |
 |---|---|
 | `docs/superpowers/specs/<SLUG>.md` exists (or `-diagnosis.md` for fix runs) | 2 (interview + spec) |
 | gate-1 report in `docs/superpowers/critic-reports/` | 3 |
-| spec contains `**Approved by user:**` AND `docs/requirements/F-*-<slug>.md` exists | 3.5 |
+| spec contains `**Approved by user:**` AND `docs/requirements/F-*-<slug>.md` exists (fix runs: the diagnosis's `**Approved by user:**` line alone — no requirements file exists for a bug fix) | 3.5 |
 | `docs/superpowers/plans/<SLUG>.md` exists | 4 |
 | beads epic + tasks exist (`bd list` matching the feature) | 5 |
-| branch `feature/<slug>` (or `improve/`, `fix/`) exists | 6 |
+| the work branch exists — `feature/<slug>` (also for /fix runs, which inherit the prefix) or `improve/<slug>` (improve.md declares its own) | 6 |
 | `bd ready` shows no open tasks for the epic | 7 |
 | gate-2 report exists | 8 |
-| `docs/superpowers/visual-evidence/<SLUG>/verdict.json` or `quant-evidence/<SLUG>/verdict.json` | 9/9b/9c |
+| `visual-evidence/<SLUG>/verdict.json` AND `quant-evidence/<SLUG>/verdict.json` exist with `status` pass/verified/skipped | 9/9b/9c (a `failed`/`partial` blocking verdict means resume INTO the gate's address flow, not past it) |
 | merge commit on main mentioning `<slug>` | 10 |
 
 Disagreement with the cache → the artifacts win; say so in one line.
