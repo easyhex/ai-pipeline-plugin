@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 10-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 12-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 10 user-facing commands
+## The 12 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, seeds `docs/glossary.md` and installs `docs/risks.md` + `docs/analysis/analogs.md` (optional web-search fill), confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. Refuses to run if the current folder already contains feature code.
@@ -30,6 +30,12 @@ Generate a requirements questionnaire for someone else's head (client, domain ex
 
 ### `/resume [slug]`
 Continue an interrupted pipeline run. Derives the true position from artifact existence (spec → approval line → plan → beads tasks → gate reports → evidence → merge) and reconciles it with the `docs/superpowers/runs/current.json` cache — files win over the cache. Never re-mints an F-ID; never re-runs an approved playback.
+
+### `/validate [feature]`
+Falsify shipped guesses against reality: re-runs machine-checkable success criteria itself, asks for outcome evidence per criterion (frontier format, "I don't know" keeps it unchecked), records met/missed with evidence into the requirements files, and routes missed criteria as a reprioritization proposal to `/plan-improve`. Features shipped without criteria are listed as "unfalsifiable".
+
+### `/deprecate "<feature>"`
+The non-additive path: impact scan (traceability + supersedes chains + @relation call sites), deep-weight playback over the impact list, a committed migration plan, code removal via the standard TDD loop with the gate-2 critic told the break is INTENDED (it reviews the migration, not the regression), `BREAKING` change-history rows that make the next `/release` a major bump.
 
 ### `/release`
 Cut a product release: proposes the next semver from shipped-since-last-tag features (confirmed by one ❓), writes a human-register `CHANGELOG.md` from spec Goals (never from commit messages) including a mid-based "requirements changed since last release" section, stamps `in vX.Y.Z` into `docs/features.md`, commits and tags locally. Never pushes.
