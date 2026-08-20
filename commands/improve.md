@@ -16,7 +16,7 @@ This command runs the **same pipeline as `/feature`** (all phases, including the
 ## Pre-flight
 
 1. Master Plan must exist:
-   - Run: `grep -q "UNFILLED" docs/architecture.md 2>/dev/null && echo unfilled || echo filled`
+   - Run: `[ -f docs/architecture.md ] && ! grep -q "UNFILLED" docs/architecture.md && echo filled || echo unfilled`
    - If `unfilled` → STOP. Print: "Run `/init "<app description>"` first."
 
 2. At least one feature must be in `docs/features.md` Shipped section:

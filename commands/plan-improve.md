@@ -9,7 +9,7 @@ argument-hint: "<change to make to the plan>"
 
 ## Pre-flight
 
-- Run: `grep -q "UNFILLED" docs/architecture.md 2>/dev/null && echo unfilled || echo filled`
+- Run: `[ -f docs/architecture.md ] && ! grep -q "UNFILLED" docs/architecture.md && echo filled || echo unfilled`
 - If `unfilled` → STOP. Print: "Master Plan not initialized. Run `/init \"<app description>\"` first."
 
 ## Phase 1: Load current state
