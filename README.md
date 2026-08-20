@@ -41,7 +41,7 @@ claude
 > /init "todo app with realtime sync"
 ```
 
-`/init` will:
+`/init` works in an empty folder AND on an existing codebase (adopt mode: the Master Plan is derived from the real code, confirmed line-by-line, nothing is overwritten). It will:
 1. Auto-install any missing prerequisite plugins (with a one-line `[y/n]` preview)
 2. Run a short frontier-round interview (stakes / primary user / stack / scenarios / quality ranking / a forced NFR round)
 3. Write the per-project file tree (CLAUDE.md, docs/, docs-meta/, .claude/)

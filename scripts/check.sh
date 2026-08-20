@@ -509,6 +509,41 @@ if [ -f assets/templates/out-of-scope.md ] \
   pass "T63 deliberate refusals persist (out-of-scope KB)"
 else fail "T63 rejected concepts get re-litigated forever"; fi
 
+# ---- v1.1 adopt contract ----
+
+# T64 — the Master Plan pre-flight must read a MISSING architecture.md as unfilled
+# (executed: extract the actual check line from feature.md, run it in an empty dir).
+if python3 - <<'EOF'
+import re, subprocess, sys, tempfile, os
+src = open('commands/feature.md', encoding='utf-8').read()
+m = re.search(r'Run: `([^`]*UNFILLED[^`]*)`', src)
+if not m:
+    print("pre-flight check line not found"); sys.exit(1)
+check = m.group(1).replace('\\"', '"')
+with tempfile.TemporaryDirectory() as d:
+    out = subprocess.run(['bash', '-c', check], cwd=d, capture_output=True, text=True).stdout.strip()
+    if out != 'unfilled':
+        print(f"empty dir gives {out!r}, want 'unfilled'"); sys.exit(1)
+    os.makedirs(os.path.join(d, 'docs')); open(os.path.join(d, 'docs/architecture.md'), 'w').write('# A\nfilled content')
+    out = subprocess.run(['bash', '-c', check], cwd=d, capture_output=True, text=True).stdout.strip()
+    if out != 'filled':
+        print(f"filled doc gives {out!r}, want 'filled'"); sys.exit(1)
+sys.exit(0)
+EOF
+then pass "T64 missing Master Plan reads as unfilled (executed)"
+else fail "T64 a repo with no docs at all passes the Master Plan pre-flight"; fi
+if grep -q 'UNFILLED' commands/plan-improve.md && ! grep -qF 'grep -q "UNFILLED" docs/architecture.md 2>/dev/null && echo unfilled' commands/plan-improve.md; then
+  pass "T64b plan-improve pre-flight uses the corrected check"
+else fail "T64b plan-improve still carries the inverted check"; fi
+
+# T65 — /init adopt path: existing codebases are onboarded, never clobbered.
+if grep -qi 'adopt' commands/init.md \
+   && grep -qi 'reverse-engineer\|derived from the ACTUAL code\|from the actual code' commands/init.md \
+   && grep -qi 'never overwrite\|do not overwrite\|append.*gitignore\|gitignore.*append' commands/init.md \
+   && grep -q 'proposed — unconfirmed' commands/init.md; then
+  pass "T65 /init adopts existing codebases (derive, confirm, never overwrite)"
+else fail "T65 existing codebases still have no onboarding path"; fi
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"

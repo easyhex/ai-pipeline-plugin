@@ -7,7 +7,7 @@
       "name": "ai-pipeline",
       "source": "./",
       "description": "12-command AI development pipeline with frontier-round elicitation, spec sign-off gate, living EARS requirements + risk register, numerical quant-verify gate, enforcement hooks, validation loop, auto-critic, lessons, Serena memory, and Playwright-MCP visual gate.",
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   ]
 }
