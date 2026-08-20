@@ -10,7 +10,7 @@ Releases give humans a version they can name, reference in requirements ("requir
 ## Phase 1: Collect
 
 1. Last release tag: `LAST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)`. **First release** (empty `LAST_TAG`): skip Phase 3 entirely and OMIT the "Requirements changed" section from the CHANGELOG — write one line instead: `Requirements baseline established (N requirements across M features).`
-2. Shipped-but-unstamped features: entries in `docs/features.md` Shipped section without an `in v` stamp.
+2. Shipped-but-unstamped features: entries in `docs/features.md` Shipped section without an `in v` stamp, EXCLUDING entries stamped `shipped pre-adoption` (adopted baseline — never part of a pipeline release changelog).
 3. Fixes since `$LAST_TAG`: `git log $LAST_TAG..HEAD --oneline | grep -E '^\w+ fix'` (best-effort).
 
 If nothing shipped and no fixes → STOP: "Nothing to release since $LAST_TAG."

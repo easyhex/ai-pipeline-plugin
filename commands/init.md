@@ -1,5 +1,5 @@
 ---
-description: Bootstrap a new project. Auto-installs missing prereq plugins, writes the per-project file tree (CLAUDE.md, docs/, docs-meta/, .claude/), runs git init + bd init, makes first commit. Run once per project in an empty folder.
+description: Bootstrap a project — empty folder OR existing codebase (adopt mode derives the Master Plan from real code, confirmed line-by-line, never overwriting). Auto-installs missing prereq plugins, writes the per-project file tree, runs git init + bd init. Run once per project.
 argument-hint: "<one-line app description>"
 ---
 
@@ -7,11 +7,13 @@ argument-hint: "<one-line app description>"
 
 **Input:** `$ARGUMENTS` (the one-line app description)
 
-This command runs in 7 phases. It is designed to be safe in an empty folder and refuse in a folder that already has source code.
+This command runs in 7 phases. In an empty folder it scaffolds from scratch; in a folder with existing source it offers adopt mode (see Phase 0) — it refuses only a project that already has a CLAUDE.md (already initialized).
 
 ---
 
 ## Phase 0: Pre-flight
+
+0. **Refuse if already initialized** — run check 2 (CLAUDE.md exists) FIRST: adopting an already-initialized project is always a refusal, before any adopt offer.
 
 1. **Detect an existing codebase:**
    ```bash
@@ -24,7 +26,7 @@ This command runs in 7 phases. It is designed to be safe in an empty folder and 
    **Adopt deltas (apply throughout when `ADOPT=yes`):**
    - **Never overwrite an existing file.** `CLAUDE.md` existing still stops (check 2). An existing `.gitignore` is APPENDED with the pipeline block (runs/ etc.), never replaced. Template copies that would collide are skipped with a note.
    - Phase 2 opens with a **code-grounding step BEFORE round 1** (facts, not questions): read the directory tree, manifests, README, and `git log --oneline | tail -50` — every interview ➡️ recommendation must be derived from the ACTUAL code, and questions the code already answers are not asked.
-   - Phase 4: `docs/architecture.md` §2-4 are reverse-engineered from the real tree and manifests (modules = real directories with their real dependencies); `docs/features.md` lists functionality that OBSERVABLY exists (from code + git history) as already-`shipped` entries plus Planned items from the interview; roadmap from the interview. Everything machine-derived carries `(proposed — unconfirmed)` and goes through Phase 4.5 line-by-line confirmation as usual — an adopted plan the user never confirmed is worse than none.
+   - Phase 4: `docs/architecture.md` §2-4 are reverse-engineered from the real tree and manifests (modules = real directories with their real dependencies); `docs/features.md` lists functionality that OBSERVABLY exists (from code + git history) as entries stamped `— shipped pre-adoption` (a baseline marker: `/release` excludes them from changelogs, `/validate` lists them as unfalsifiable until requirements files are added via `/plan-improve`) plus Planned items from the interview; roadmap from the interview. Everything machine-derived carries `(proposed — unconfirmed)` and goes through Phase 4.5 line-by-line confirmation as usual — an adopted plan the user never confirmed is worse than none.
    - Phase 6: the repo already exists — `git init` is skipped, and the commit adds ONLY the pipeline files (`git add CLAUDE.md docs/ docs-meta/ .claude/ .gitignore` — NEVER `git add -A`, which would sweep the user's unrelated working-tree changes). Commit message: `chore: adopt ai-pipeline (Master Plan derived from existing code)`.
    - Phase 7 report notes adopt mode and lists any skipped collisions.
 
@@ -229,8 +231,17 @@ cp "$TEMPLATE_DIR/risks.md"              ./docs/risks.md
 cp "$TEMPLATE_DIR/glossary.md"           ./docs/glossary.md
 cp "$TEMPLATE_DIR/analogs.md"            ./docs/analysis/analogs.md
 cp "$TEMPLATE_DIR/out-of-scope.md"       ./docs/analysis/out-of-scope.md
-cp "$TEMPLATE_DIR/gitignore"          ./.gitignore       # rename: no leading dot in source
-cp "$TEMPLATE_DIR/settings.json"      ./.claude/settings.json
+# adopt mode never overwrites: gitignore is APPENDED, settings are MERGED (template keys win only where absent)
+if [ "${ADOPT:-no}" = "yes" ] && [ -f .gitignore ]; then
+  printf '\n' >> ./.gitignore && cat "$TEMPLATE_DIR/gitignore" >> ./.gitignore
+else
+  cp "$TEMPLATE_DIR/gitignore"        ./.gitignore       # rename: no leading dot in source
+fi
+if [ "${ADOPT:-no}" = "yes" ] && [ -f .claude/settings.json ]; then
+  jq -s '.[1] * .[0]' "$TEMPLATE_DIR/settings.json" .claude/settings.json > /tmp/s.json && mv /tmp/s.json .claude/settings.json
+else
+  cp "$TEMPLATE_DIR/settings.json"    ./.claude/settings.json
+fi
 ```
 
 Write the interview's stakes + class answers into settings (defaults: `standard`, `unset`):
@@ -331,7 +342,7 @@ bd init
 If `bd init` succeeds, create one epic placeholder (use the app's slug derived from `$ARGUMENTS`):
 
 ```bash
-bd create -t epic "Initial development of <app slug>"
+bd create -t epic "$( [ \"${ADOPT:-no}\" = yes ] && echo \"Pipeline adoption of <app slug>\" || echo \"Initial development of <app slug>\" )"
 ```
 
 If `bd init` fails because already initialized, continue silently.
@@ -344,7 +355,11 @@ If `bd` was MISSING, skip this phase silently (Phase 1 already warned).
 
 ```bash
 git init
-git add -A
+if [ "${ADOPT:-no}" = "yes" ]; then
+  git add CLAUDE.md docs/ docs-meta/ .claude/ .gitignore   # NEVER -A when adopting — the user's tree is not ours to commit
+else
+  git add -A
+fi
 git commit -m "chore: scaffold via /init
 
 App: $ARGUMENTS
@@ -355,7 +370,7 @@ Generated by: /init"
 
 If `git init` fails because the folder is already a git repo:
 - Skip the init
-- Commit only the pipeline files (never `-A` in a pre-existing repo): `git add CLAUDE.md docs/ docs-meta/ .claude/ .gitignore && git commit -m "chore: pipeline scaffold via /init"`
+- Commit only the pipeline files (never `-A` in a pre-existing repo): `git add CLAUDE.md docs/ docs-meta/ .claude/ .gitignore && git commit -m "chore: adopt ai-pipeline (Master Plan derived from existing code)"`
 
 ---
 

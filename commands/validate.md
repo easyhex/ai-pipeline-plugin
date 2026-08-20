@@ -12,7 +12,8 @@ The pipeline's learning loop otherwise ingests only bugs — never "we built the
 1. Candidates: `docs/requirements/F-*.md` with frontmatter `status: shipped` (narrow to `$ARGUMENTS` if given).
 2. A feature is DUE when its `## Success criteria` section has any criterion with status `unchecked`, or a `met`/`missed` whose check-by condition has re-triggered (e.g. "re-check at 10× data scale").
 3. Active-run guard: if `docs/superpowers/runs/current.json` exists and its feature matches a candidate, skip that feature with a note ("in-flight run — validate after it finishes") — never edit a requirements file an active run may be amending.
-4. Nothing due → report "Nothing to validate" and stop. A shipped feature with NO Success criteria section is itself a finding — list those ("shipped unfalsifiable") and suggest adding criteria via `/plan-improve`.
+4. Also scan `docs/features.md` Shipped entries that have NO requirements file at all (adopted baselines) — list them as "shipped unfalsifiable (no requirements file)" alongside features whose file lacks Success criteria; both get the same suggestion: add criteria via `/plan-improve`.
+5. Nothing due → report "Nothing to validate" and stop.
 
 ## Phase 2: Gather outcome evidence (frontier format)
 

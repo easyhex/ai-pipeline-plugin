@@ -146,7 +146,7 @@ The layers do NOT overlap by design:
 
 | Situation | Behavior |
 |---|---|
-| `/init` in non-empty folder | Refuse with explanation; suggest using an empty folder |
+| `/init` in non-empty folder | Offer adopt mode (Master Plan derived from real code, line-by-line confirm, never overwrite); refuse only if declined or CLAUDE.md already exists |
 | `/feature` before `/init` (no Master Plan) | Refuse; tell user to run `/init` first |
 | Context7 lookup fails | Log warning, continue, note in spec "library docs unavailable, proceed with caution" |
 | Critic gate-1 Critical + user picks `address` | Re-run brainstorm with critic findings injected |

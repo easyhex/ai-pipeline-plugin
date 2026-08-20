@@ -532,9 +532,10 @@ sys.exit(0)
 EOF
 then pass "T64 missing Master Plan reads as unfilled (executed)"
 else fail "T64 a repo with no docs at all passes the Master Plan pre-flight"; fi
-if grep -q 'UNFILLED' commands/plan-improve.md && ! grep -qF 'grep -q "UNFILLED" docs/architecture.md 2>/dev/null && echo unfilled' commands/plan-improve.md; then
-  pass "T64b plan-improve pre-flight uses the corrected check"
-else fail "T64b plan-improve still carries the inverted check"; fi
+if ! grep -rqF '&& echo unfilled || echo filled' commands/ \
+   && [ "$(grep -rlF 'echo filled || echo unfilled' commands/ | wc -l | tr -d ' ')" = "3" ]; then
+  pass "T64b corrected pre-flight in all three literal carriers; inverted form extinct"
+else fail "T64b an inverted Master Plan pre-flight survives in a command file"; fi
 
 # T65 — /init adopt path: existing codebases are onboarded, never clobbered.
 if grep -qi 'adopt' commands/init.md \
