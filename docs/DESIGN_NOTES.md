@@ -1,10 +1,10 @@
 # Design notes
 
-This plugin packages a slash-command AI development pipeline (the command inventory lives in `assets/templates/PIPELINE.md`). The full design rationale is captured in two specs that live in the predecessor repo (the original `project_template/` directory used to develop this plugin):
+This plugin packages a slash-command AI development pipeline (the command inventory lives in `assets/templates/PIPELINE.md`). The full design rationale is captured in the v0.1-era specs, archived in `docs/history/` (migrated 2026-08-21 from the predecessor `project_template/` directory, together with their implementation plans):
 
-- **Pipeline design** — the user-facing commands, the `senior-critic` agent, the lessons system, the Master Plan split: see the original spec at `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-design.md`
-- **Plugin packaging design** — turning the per-project pipeline into an installable Claude Code plugin: see `project_template/docs/superpowers/specs/2026-04-25-ai-pipeline-plugin-design.md`
-- **Serena memory integration (v0.2.0)** — see the spec at `project_template/docs/superpowers/specs/2026-04-25-serena-memory-integration.md` for the full design (5-layer context model, /remember command, critic-driven auto-capture).
+- **Pipeline design** — the user-facing commands, the `senior-critic` agent, the lessons system, the Master Plan split: see the original spec, archived at [`docs/history/2026-04-25-ai-pipeline-design.md`](history/2026-04-25-ai-pipeline-design.md)
+- **Plugin packaging design** — turning the per-project pipeline into an installable Claude Code plugin: see [`docs/history/2026-04-25-ai-pipeline-plugin-design.md`](history/2026-04-25-ai-pipeline-plugin-design.md)
+- **Serena memory integration (v0.2.0)** — see [`docs/history/2026-04-25-serena-memory-integration.md`](history/2026-04-25-serena-memory-integration.md) for the full design (5-layer context model, /remember command, critic-driven auto-capture).
 
 ## Why this design
 
