@@ -1,8 +1,8 @@
 # Pipeline reference
 
-This document describes the 12-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
+This document describes the 13-command AI development pipeline that ships with this project template. It is the **source of truth** referenced from `CLAUDE.md`.
 
-## The 12 user-facing commands
+## The 13 user-facing commands
 
 ### `/init "<app description>"`
 Bootstrap a new project. Runs a frontier-round interview (stakes / user / stack / scenarios / quality ranking / forced NFR round per `docs-meta/ELICITATION.md`), fills in `docs/architecture.md`, `docs/features.md`, `docs/roadmap.md`, seeds `docs/glossary.md` and installs `docs/risks.md` + `docs/analysis/analogs.md` (optional web-search fill), confirms every drafted line with the user BEFORE the first commit, scaffolds the project skeleton, runs `git init`, runs `bd init`. An existing codebase is not refused: adopt mode reverse-engineers the Master Plan from the real code and git history (everything derived is `(proposed — unconfirmed)` until line-by-line confirmation), never overwrites existing files, and commits only the pipeline files.
@@ -41,6 +41,9 @@ The non-additive path: impact scan (traceability + supersedes chains + @relation
 Cut a product release: proposes the next semver from shipped-since-last-tag features (confirmed by one ❓), writes a human-register `CHANGELOG.md` from spec Goals (never from commit messages) including a mid-based "requirements changed since last release" section, stamps `in vX.Y.Z` into `docs/features.md`, commits and tags locally. Never pushes.
 
 ---
+
+### `/overview`
+Build `docs/overview.html` — one self-contained page projecting the specs and the structure: module map (from `architecture.md` §3 `depends on`), stack, ФТТ/НТТ with their EARS wording, `mid`, verify method and evidence, NFR thresholds with proving commands, success criteria, feature readiness, roadmap by status, open risks (a past `Review-by` date is flagged overdue). Reads `docs/` only — no external reports, no run-state, no network. The page is DERIVED: regenerate it, never hand-edit it. Safe to run at any time, including mid-run.
 
 ## Internal phases (run automatically inside `/feature`, `/improve`, `/fix`)
 

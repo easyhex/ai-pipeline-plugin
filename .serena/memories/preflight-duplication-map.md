@@ -1,0 +1,3 @@
+The Master Plan pre-flight check line (`[ -f docs/architecture.md ] && ! grep -q "UNFILLED" ... && echo filled || echo unfilled`) is canonical in feature.md, inherited BY REFERENCE in fix.md ("same check as /feature"), but duplicated LITERALLY in plan-improve.md and improve.md. Any change to it must touch all three literal carriers — or convert them to by-reference. Guard: check.sh T64 (executes feature.md's line both directions) + T64b (forbids the inverted form repo-wide, counts exactly 3 corrected literal carriers).
+
+Captured by senior-critic at gate-2 of feature/v1.1.0-adopt on 2026-08-20 — the v1.1.0 "inverted pre-flight fix" initially missed improve.md's literal copy and shipped a wrong-reason-green test suite.
