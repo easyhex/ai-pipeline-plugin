@@ -26,6 +26,38 @@ def section(text, heading_re):
     nxt = re.search(r"^##\s", rest, re.M)
     return rest[:nxt.start()] if nxt else rest
 
+# Template projects number their headings; hand-written and adopted ones do not.
+# Each role is resolved by the template number FIRST, then by name.
+HEADINGS = {
+    "purpose":  [r"1\.", r".*what this app is", r".*the product", r".*in one sentence",
+                 r".*boundary", r".*назначени", r".*о продукте"],
+    "stack":    [r"2\.", r".*tech stack", r".*stack", r".*стек", r".*технологи"],
+    "modules":  [r"3\.", r".*key modules", r".*modules", r".*boundaries", r".*crates",
+                 r".*packages", r".*components", r".*модул", r".*компонент"],
+    "flow":     [r"4\.", r".*data flow", r".*flow", r".*поток данных", r".*поток"],
+    "services": [r"5\.", r".*external services", r".*services", r".*внешние сервис"],
+}
+
+def role_section(text, role):
+    """First section matching this role, template numbering preferred."""
+    for pat in HEADINGS[role]:
+        body = section(text, pat)
+        if body.strip():
+            return body
+    return ""
+
+def join_bullets(body):
+    """Fold continuation lines into their bullet — real docs wrap long module lines."""
+    out = []
+    for line in body.splitlines():
+        if re.match(r"\s*[-*]\s+", line):
+            out.append(line.rstrip())
+        elif line.strip() and out and not line.startswith("#") and not line.lstrip().startswith("|"):
+            out[-1] += " " + line.strip()
+        else:
+            out.append(line.rstrip())
+    return "\n".join(out)
+
 def table_rows(body):
     """Rows of the first markdown table in body, as lists of cells."""
     out = []
@@ -52,16 +84,18 @@ def is_placeholder(s):
 
 def parse_architecture(text):
     arch = {"purpose": "", "stack": [], "modules": [], "flow": "", "services": []}
-    body = section(text, r"1\.")
+    body = role_section(text, "purpose") or re.sub(r"^#\s+.*$", "", text, count=1, flags=re.M)
     for para in body.strip().split("\n\n"):
-        para = para.strip()
-        if para and not para.startswith(("<", "|", "-", "#")):
+        para = " ".join(para.split())
+        if para and not para.startswith(("<", "|", "-", "#", "---")) and "doc_version" not in para:
             arch["purpose"] = para
             break
-    for row in table_rows(section(text, r"2\.")):
+    for row in table_rows(role_section(text, "stack")):
         if len(row) >= 3 and not is_placeholder(row[1]):
             arch["stack"].append({"layer": row[0], "choice": row[1], "why": row[2]})
-    for line in section(text, r"3\.").splitlines():
+
+    mod_body = role_section(text, "modules")
+    for line in join_bullets(mod_body).splitlines():
         m = re.match(r"\s*[-*]\s+`?([\w\-./]+)`?\s*[—-]\s*(.*)", line)
         if not m:
             continue
@@ -69,13 +103,23 @@ def parse_architecture(text):
         if name.lower() in ("example", "name"):
             continue
         deps = []
-        dm = re.search(r"depends on\s+(.*)", rest, re.I)
-        purpose = re.split(r";\s*depends on", rest, flags=re.I)[0].strip(" .;")
+        dm = re.search(r"depends on\s+([^.;]*)", rest, re.I)
+        purpose = re.split(r"[;.]?\s*depends on", rest, flags=re.I)[0].strip(" .;")
         if dm and "nothing" not in dm.group(1).lower():
-            deps = [d for d in re.findall(r"`?([\w\-./]+)`?", dm.group(1)) if d.lower() != "nothing"]
+            deps = [d for d in re.findall(r"`?([\w\-./]+)`?", dm.group(1))
+                    if d.lower() not in ("nothing", "and", "the")]
         arch["modules"].append({"name": name, "purpose": purpose, "deps": deps})
-    arch["flow"] = " ".join(section(text, r"4\.").split())[:400]
-    for row in table_rows(section(text, r"5\.")):
+
+    if not arch["modules"] and mod_body.strip():
+        # Prose module list ("`a`, `b` and `c` are independent domain modules").
+        seen = []
+        for tok in re.findall(r"`([\w\-./]+)`", mod_body):
+            if tok not in seen:
+                seen.append(tok)
+        arch["modules"] = [{"name": n, "purpose": "", "deps": []} for n in seen[:20]]
+
+    arch["flow"] = " ".join(role_section(text, "flow").split())[:400]
+    for row in table_rows(role_section(text, "services")):
         if len(row) >= 2 and not is_placeholder(row[0]):
             arch["services"].append({"name": row[0], "purpose": row[1]})
     return arch
@@ -351,8 +395,14 @@ def render(root, docs, out_path):
     A('<section><h2>02 · ФТТ / НТТ — требования</h2>'
       '<p class="note">Живые файлы требований: текущая правда о фиче, а не снимок на момент спеки. '
       'Идентификаторы остаются английскими и греппаемыми — человеческий регистр живёт в заголовках.</p>')
-    A('<div class="tablewrap"><table><thead><tr><th>ID</th><th>Тип</th>'
-      '<th>Формулировка (EARS)</th><th>Проверка</th><th>Свидетельство</th><th>Состояние</th></tr></thead><tbody>')
+    if not frs and not nfrs:
+        A('<div class="card pad empty">Файлов требований нет: <span class="mono">docs/requirements/</span> '
+          'пуста или отсутствует. Проект создан до v0.5 либо требования ещё не заведены — '
+          'ФТТ/НТТ появятся здесь после первого <span class="mono">/feature</span> или '
+          '<span class="mono">/plan-improve</span>.</div></section>')
+    if frs or nfrs:
+        A('<div class="tablewrap"><table><thead><tr><th>ID</th><th>Тип</th>'
+          '<th>Формулировка (EARS)</th><th>Проверка</th><th>Свидетельство</th><th>Состояние</th></tr></thead><tbody>')
     for fid, i in frs:
         kind, label = evidence_state(i)
         v = i.get("verify") or {}
@@ -371,7 +421,8 @@ def render(root, docs, out_path):
              e(i["threshold"]), e(i["command"]) or "—",
              pill("ok" if i["command"] else "crit",
                   "команда заявлена" if i["command"] else "нечем доказать")))
-    A("</tbody></table></div>")
+    if frs or nfrs:
+        A("</tbody></table></div>")
 
     anatomy = next((x for x in frs if (x[1].get("code") or {}).get("path")), None)
     if anatomy:
@@ -394,7 +445,8 @@ def render(root, docs, out_path):
              e(code.get("path", "")), e(code.get("symbol", "")),
              e(code.get("sha256", "")), e(code.get("verified_at", ""))))
         A("</div>")
-    A("</section>")
+    if frs or nfrs:
+        A("</section>")
 
     # --- 03 NFR thresholds ---
     A('<section><h2>03 · НТТ: пороги и доказывающие команды</h2>'
@@ -436,13 +488,20 @@ def render(root, docs, out_path):
           '«B используется в A»: слева — модули без зависимостей. %s</figcaption></figure></div>' % (graph, e(arch["flow"])))
     else:
         A('<p class="note">Модулей больше 15 — граф свёрнут в список.</p>')
-    A('<div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Модуль</th>'
-      '<th>Назначение</th><th>Зависит от</th><th>Требований</th></tr></thead><tbody>')
+    if not arch["modules"]:
+        A('<div class="card pad empty">В <span class="mono">docs/architecture.md</span> нет списка модулей: '
+          'ни маркированного списка с <span class="mono">depends on</span>, ни перечисления имён. '
+          'Добавьте раздел «Key modules / boundaries» через <span class="mono">/plan-improve</span> — '
+          'карта появится сама.</div></section>')
+    else:
+     A('<div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Модуль</th>'
+       '<th>Назначение</th><th>Зависит от</th><th>Требований</th></tr></thead><tbody>')
     for m in arch["modules"]:
         n = sum(1 for _, i in frs if module_of(i, arch["modules"]).strip("/") == m["name"].strip("/"))
         A('<tr><td class="id">%s</td><td>%s</td><td class="mono">%s</td><td class="id">%s</td></tr>'
           % (e(m["name"]), e(m["purpose"]), e(", ".join(m["deps"]) or "—"), n or "—"))
-    A("</tbody></table></div></section>")
+    if arch["modules"]:
+        A("</tbody></table></div></section>")
 
     if arch["stack"]:
         A('<section><h2>06 · Архитектурный стек</h2>'
@@ -455,9 +514,15 @@ def render(root, docs, out_path):
         A("</tbody></table></div></section>")
 
     # --- 07 features ---
-    A('<section><h2>07 · Фичи построчно</h2><div class="tablewrap"><table><thead><tr>'
-      '<th>ID</th><th>Фича</th><th>Описание</th><th>Статус</th><th>Ступень</th>'
-      '<th>Требований</th></tr></thead><tbody>')
+    A('<section><h2>07 · Фичи построчно</h2>')
+    if not feats:
+        A('<div class="card pad empty">Инвентарь фич пуст: <span class="mono">docs/features.md</span> '
+          'отсутствует или не заполнен. Без него не выводится ни готовность, ни статусы дорожной карты.'
+          '</div></section>')
+    else:
+     A('<div class="tablewrap"><table><thead><tr>'
+       '<th>ID</th><th>Фича</th><th>Описание</th><th>Статус</th><th>Ступень</th>'
+       '<th>Требований</th></tr></thead><tbody>')
     for f in feats:
         r = reqs.get(f["id"])
         n = len(r["frs"]) + len(r["nfrs"]) if r else 0
@@ -467,7 +532,8 @@ def render(root, docs, out_path):
           '<td class="id">%s</td></tr>'
           % (e(f["id"]), e(f["slug"]), e(f["desc"]), pill("neutral", f["status"]),
              pill(kind, f["stage"]), n or "—"))
-    A("</tbody></table></div></section>")
+    if feats:
+        A("</tbody></table></div></section>")
 
     # --- 08 roadmap ---
     if lanes:

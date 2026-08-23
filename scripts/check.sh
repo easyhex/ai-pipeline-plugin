@@ -592,6 +592,33 @@ then pass "T66 /overview generates the page from docs/ alone (executed)"
 else fail "T66 /overview generator does not produce the required page"; fi
 
 
+# T67 — /overview against a hand-written architecture.md: real projects (adopted
+# ones especially) do not keep the template's numbered headings. Modules must be
+# found by heading NAME, prose module lists degrade to nodes, and absent
+# requirements/risks must be stated, never rendered as an empty table.
+if python3 - <<'EOF'
+import subprocess, sys, os, tempfile
+out = os.path.join(tempfile.mkdtemp(), "o.html")
+r = subprocess.run([sys.executable, "scripts/pipeline/overview/generate.py",
+                    "tests/fixtures/overview-freeform", "-o", out], capture_output=True, text=True)
+if r.returncode != 0:
+    print("exited %d: %s" % (r.returncode, (r.stderr or "")[:300])); sys.exit(1)
+h = open(out, encoding="utf-8").read()
+def need(c, m):
+    if not c:
+        print("MISSING: " + m); sys.exit(1)
+for mod in ["inventory", "selection", "leads", "auth", "wallet"]:
+    need(mod in h, "module '%s' harvested from a prose module list" % mod)
+need("Node 22" in h, "stack found under a non-numbered 'Runtime Stack' heading")
+need("Маркетплейс" in h, "purpose found under a non-numbered heading")
+need("требован" in h.lower() and ("не заведен" in h or "нет" in h),
+     "absent requirements must be stated explicitly")
+sys.exit(0)
+EOF
+then pass "T67 /overview survives hand-written architecture.md (executed)"
+else fail "T67 /overview only parses the template's numbered headings"; fi
+
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"
