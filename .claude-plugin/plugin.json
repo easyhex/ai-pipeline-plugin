@@ -1,7 +1,7 @@
 {
   "name": "ai-pipeline",
-  "description": "12-command AI development pipeline (/init, /plan-improve, /feature, /improve, /fix, /lesson, /remember, /questionnaire, /release, /resume, /validate, /deprecate) with frontier-round elicitation, a spec playback sign-off gate, living EARS requirements with traceability and a risk register, a numerical quant-verify gate with oracle taxonomy, harness-level enforcement hooks, a reality-validation loop, auto-critic at two gates, lessons-learned flywheel, Serena memory, and Playwright-MCP visual verification gate for frontend projects. Builds on Superpowers, Beads, Context7.",
-  "version": "1.1.0",
+  "description": "13-command AI development pipeline (/init, /plan-improve, /feature, /improve, /fix, /lesson, /remember, /questionnaire, /release, /resume, /validate, /deprecate) with frontier-round elicitation, a spec playback sign-off gate, living EARS requirements with traceability and a risk register, a numerical quant-verify gate with oracle taxonomy, harness-level enforcement hooks, a reality-validation loop, auto-critic at two gates, lessons-learned flywheel, Serena memory, and Playwright-MCP visual verification gate for frontend projects. Builds on Superpowers, Beads, Context7.",
+  "version": "1.2.0",
   "author": {
     "name": "easyhex",
     "url": "https://github.com/easyhex"

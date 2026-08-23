@@ -1,6 +1,6 @@
 # ai-pipeline
 
-A Claude Code plugin that ships a 12-command AI development pipeline with frontier-round elicitation and an explicit spec playback sign-off gate, an automatic senior-engineer critic at two gates, a lessons-learned flywheel, Serena memory for stable project knowledge, and a Playwright MCP visual-verify gate — six context layers in total.
+A Claude Code plugin that ships a 13-command AI development pipeline with frontier-round elicitation and an explicit spec playback sign-off gate, an automatic senior-engineer critic at two gates, a lessons-learned flywheel, Serena memory for stable project knowledge, and a Playwright MCP visual-verify gate — six context layers in total.
 
 ## What you get
 
@@ -19,9 +19,10 @@ After installing this plugin, you can bootstrap any new project with one command
 | `/release` | Cut a product release: semver, human CHANGELOG, requirements diff, local tag |
 | `/resume` | Continue an interrupted pipeline run — position derived from artifacts, not memory |
 | `/validate` | Check shipped features against their success criteria with real outcome evidence |
+| `/overview` | Build `docs/overview.html` — specs (ФТТ/НТТ) and structure on one page, derived from `docs/` |
 | `/deprecate "<feature>"` | Deliberately retire/break a feature — impact scan + committed migration plan |
 
-You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/finish` — those are internal phases of the 12 commands above.
+You never type `/brainstorm`, `/plan`, `/build`, `/critic`, `/verify`, or `/finish` — those are internal phases of the 13 commands above.
 
 ## Install
 
@@ -30,7 +31,7 @@ claude plugin marketplace add easyhex/ai-pipeline-plugin
 claude plugin install ai-pipeline@ai-pipeline-marketplace
 ```
 
-That's it. The 12 commands and the `senior-critic` agent are now available globally in any project.
+That's it. The 13 commands and the `senior-critic` agent are now available globally in any project.
 
 ## Bootstrap a new project
 
@@ -91,14 +92,14 @@ claude mcp add --scope user serena -- serena start-mcp-server --context claude-c
 
 The pipeline has four auto-loaded components:
 
-1. **12 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
+1. **13 user-facing commands** (in `commands/`) — auto-loaded by Claude Code
 2. **`senior-critic` subagent** (in `agents/`) — auto-loaded, invoked at two gates per feature
 3. **Enforcement hooks** (in `hooks/` + `scripts/hooks/`) — harness-level gates that no-op outside active pipeline runs
 4. **Per-project templates** (in `assets/templates/`) — written into your project by `/init`
 
 Per-project files written by `/init`:
 
-- `CLAUDE.md` — pipeline rules and the 12-command surface
+- `CLAUDE.md` — pipeline rules and the 13-command surface
 - `docs/architecture.md` — Master Plan: target architecture (≤300 lines)
 - `docs/features.md` — Master Plan: feature inventory (≤500 lines)
 - `docs/roadmap.md` — Master Plan: ordered priorities (≤200 lines)

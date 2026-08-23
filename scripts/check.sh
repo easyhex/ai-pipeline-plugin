@@ -545,6 +545,80 @@ if grep -qi 'adopt' commands/init.md \
   pass "T65 /init adopts existing codebases (derive, confirm, never overwrite)"
 else fail "T65 existing codebases still have no onboarding path"; fi
 
+# T66 — /overview generator: builds a self-contained page from docs/ alone.
+# Runs the real generator against tests/fixtures/overview-project and asserts the
+# substance it must extract: modules + deps, stack, ФТТ/НТТ with EARS, readiness
+# stages, success criteria and an overdue risk. No golden file — structure only.
+if python3 - <<'EOF'
+import subprocess, sys, os, tempfile, re
+gen = "scripts/pipeline/overview/generate.py"
+if not os.path.exists(gen):
+    print("generator missing: " + gen); sys.exit(1)
+out = os.path.join(tempfile.mkdtemp(), "overview.html")
+r = subprocess.run([sys.executable, gen, "tests/fixtures/overview-project", "-o", out],
+                   capture_output=True, text=True)
+if r.returncode != 0:
+    print("generator exited %d: %s" % (r.returncode, (r.stderr or "")[:400])); sys.exit(1)
+if not os.path.exists(out):
+    print("generator wrote nothing to " + out); sys.exit(1)
+h = open(out, encoding="utf-8").read()
+def need(cond, msg):
+    if not cond:
+        print("MISSING: " + msg); sys.exit(1)
+need(h.lstrip().startswith("<title>"), "page must start with <title> (artifact/plain-file contract)")
+need("http" not in re.sub(r'https://fonts\.(googleapis|gstatic)\.com', '', h).replace("http-equiv",""),
+     "page must be self-contained (no external hosts besides Google Fonts)")
+for m in ["io/", "mesh/", "math/", "bc/", "core/", "post/", "cli/"]:
+    need(m in h, "module %s from architecture.md" % m)
+need("<svg" in h and "marker" in h, "dependency graph as inline SVG with arrowheads")
+need("gmsh 4.13" in h and "HDF5 1.14" in h, "stack rows from architecture.md section 2")
+need("F-011/FR-01" in h, "requirement id F-011/FR-01")
+need("состояние покоя" in h, "EARS text carried through verbatim")
+need("7c1f4a9e" in h, "mid shown (identity that survives renames)")
+need("tests/wb_test.py::test_lake_at_rest" in h, "verify evidence")
+need("pytest -k test_lake_at_rest" in h, "NFR proving command")
+need("1e-14" in h, "NFR threshold with its units/scale")
+need(h.count("SHALL") == 0, "EARS keyword must be rendered in the prose register, not raw SHALL")
+need("R-002" in h, "open risk row")
+need("R-002" in h and ("просроч" in h or "overdue" in h), "overdue review-by must be flagged")
+need("F-023" in h, "deprecated feature still listed")
+need("implicit-solver" in h, "explicit refusal lane from roadmap")
+for stage in ["идея", "продумана", "в работе", "сделана", "подтверждена"]:
+    need(stage in h.lower(), "readiness stage '%s'" % stage)
+need("missed" in h and "met" in h, "success-criteria verdicts")
+sys.exit(0)
+EOF
+then pass "T66 /overview generates the page from docs/ alone (executed)"
+else fail "T66 /overview generator does not produce the required page"; fi
+
+
+# T67 — /overview against a hand-written architecture.md: real projects (adopted
+# ones especially) do not keep the template's numbered headings. Modules must be
+# found by heading NAME, prose module lists degrade to nodes, and absent
+# requirements/risks must be stated, never rendered as an empty table.
+if python3 - <<'EOF'
+import subprocess, sys, os, tempfile
+out = os.path.join(tempfile.mkdtemp(), "o.html")
+r = subprocess.run([sys.executable, "scripts/pipeline/overview/generate.py",
+                    "tests/fixtures/overview-freeform", "-o", out], capture_output=True, text=True)
+if r.returncode != 0:
+    print("exited %d: %s" % (r.returncode, (r.stderr or "")[:300])); sys.exit(1)
+h = open(out, encoding="utf-8").read()
+def need(c, m):
+    if not c:
+        print("MISSING: " + m); sys.exit(1)
+for mod in ["inventory", "selection", "leads", "auth", "wallet"]:
+    need(mod in h, "module '%s' harvested from a prose module list" % mod)
+need("Node 22" in h, "stack found under a non-numbered 'Runtime Stack' heading")
+need("Маркетплейс" in h, "purpose found under a non-numbered heading")
+need("требован" in h.lower() and ("не заведен" in h or "нет" in h),
+     "absent requirements must be stated explicitly")
+sys.exit(0)
+EOF
+then pass "T67 /overview survives hand-written architecture.md (executed)"
+else fail "T67 /overview only parses the template's numbered headings"; fi
+
+
 echo
 if [ "$FAILS" -gt 0 ]; then echo "$FAILS test(s) failed"; exit 1; fi
 echo "all green"
